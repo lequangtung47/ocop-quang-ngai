@@ -70,12 +70,13 @@ async function buildWebsite() {
 
             fs.writeFileSync(path.join(distDir, fileName), htmlContent);
 
-            // Tạo thẻ HTML ngoài trang chủ có gắn các thuộc tính data- filter
+            // Thẻ sản phẩm gắn thêm thuộc tính data-district-lower để phục vụ tìm kiếm xã nhanh
             productCardsHtml += `
                 <div class="card" 
                      data-title="${(product.title || '').toLowerCase()}" 
                      data-star="${star}" 
                      data-district="${district}" 
+                     data-district-lower="${district.toLowerCase()}"
                      data-category="${category}">
                     <span class="badge">OCOP ${star} SAO</span>
                     <img src="${product.image_url || ''}" alt="${product.title || ''}" loading="lazy">
@@ -87,18 +88,18 @@ async function buildWebsite() {
             `;
         });
 
-        // Tạo danh sách option cho ô Chọn Địa Phương & Phân Loại
-        let districtOptions = Array.from(districtsSet).map(d => `<option value="${d}">${d}</option>`).join('');
+        // Tạo danh sách datalist phục vụ gợi ý tên Xã/Thị trấn khi gõ
+        let districtDatalistOptions = Array.from(districtsSet).sort().map(d => `<option value="${d}">`).join('');
         let categoryOptions = Array.from(categoriesSet).map(c => `<option value="${c}">${c}</option>`).join('');
 
-        // 2. Tạo nội dung trang chủ index.html có Tìm kiếm & Bộ lọc
+        // 2. Giao diện trang chủ tích hợp Ô Tìm Kiếm Xã/Thị Trấn
         const indexHtml = `<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sản Phẩm OCOP Quảng Ngãi - 535 Đặc Sản Chính Gốc</title>
-    <meta name="description" content="Danh mục tổng hợp 535 sản phẩm OCOP Quảng Ngãi đạt chuẩn 3 sao, 4 sao, 5 sao: Tỏi Lý Sơn, Mạch nha, Đường phèn, Nước mắm...">
+    <title>Sản Phẩm OCOP Quảng Ngãi - Tra Cứu 535 Đặc Sản Chính Gốc</title>
+    <meta name="description" content="Danh mục tổng hợp 535 sản phẩm OCOP Quảng Ngãi đạt chuẩn 3 sao, 4 sao, 5 sao thuộc 96 xã phường thị trấn.">
     <style>
         body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f6f8; color: #333; }
         header { text-align: center; padding: 40px 20px; background: #00875a; color: white; }
@@ -111,9 +112,9 @@ async function buildWebsite() {
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            margin-bottom: 30px;
+            margin-bottom: 25px;
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
             gap: 15px;
         }
         .filter-section input, .filter-section select {
@@ -146,14 +147,22 @@ async function buildWebsite() {
 
     <header>
         <h1>SẢN PHẨM OCOP QUẢNG NGÃI</h1>
-        <p>Tra cứu 535 sản phẩm OCOP chính gốc tỉnh Quảng Ngãi</p>
+        <p>Tra cứu 535 sản phẩm OCOP thuộc 96 Xã/Phường/Thị trấn</p>
     </header>
 
     <main class="container">
-        <!-- Khung Tìm Kiếm & Bộ Lọc -->
+        <!-- Khung Tìm Kiếm & Bộ Lọc Nâng Cấp -->
         <div class="filter-section">
-            <input type="text" id="searchInput" placeholder="🔍 Tìm tên sản phẩm (vd: Tỏi Lý Sơn, Mạch nha...)" onkeyup="filterProducts()">
+            <!-- 1. Tìm theo tên sản phẩm -->
+            <input type="text" id="searchInput" placeholder="🔍 Tìm tên sản phẩm (vd: Tỏi, Mạch nha...)" onkeyup="filterProducts()">
             
+            <!-- 2. Ô nhập tìm kiếm Xã/Phường có gợi ý thông minh -->
+            <input type="text" id="districtInput" list="districtList" placeholder="📍 Gõ tên Xã / Phường (vd: Lý Sơn, Măng Đen...)" oninput="filterProducts()">
+            <datalist id="districtList">
+                ${districtDatalistOptions}
+            </datalist>
+
+            <!-- 3. Lọc theo Sao -->
             <select id="starFilter" onchange="filterProducts()">
                 <option value="">⭐ Tất cả Xếp Hạng Sao</option>
                 <option value="5">OCOP 5 Sao</option>
@@ -161,11 +170,7 @@ async function buildWebsite() {
                 <option value="3">OCOP 3 Sao</option>
             </select>
 
-            <select id="districtFilter" onchange="filterProducts()">
-                <option value="">📍 Tất cả Địa Phương</option>
-                ${districtOptions}
-            </select>
-
+            <!-- 4. Lọc theo Nhóm ngành -->
             <select id="categoryFilter" onchange="filterProducts()">
                 <option value="">🏷️ Tất cả Phân Loại</option>
                 ${categoryOptions}
@@ -183,12 +188,12 @@ async function buildWebsite() {
         <p>&copy; 2026 - Catalog OCOP Quảng Ngãi</p>
     </footer>
 
-    <!-- Đoạn JavaScript Lọc & Tìm Kiếm Tức Thì -->
+    <!-- Logic Tìm Kiếm Đa Chiều Tức Thời -->
     <script>
         function filterProducts() {
             const searchValue = document.getElementById('searchInput').value.toLowerCase().trim();
+            const districtSearchValue = document.getElementById('districtInput').value.toLowerCase().trim();
             const starValue = document.getElementById('starFilter').value;
-            const districtValue = document.getElementById('districtFilter').value;
             const categoryValue = document.getElementById('categoryFilter').value;
 
             const cards = document.querySelectorAll('#productGrid .card');
@@ -196,16 +201,16 @@ async function buildWebsite() {
 
             cards.forEach(card => {
                 const title = card.getAttribute('data-title') || '';
+                const districtLower = card.getAttribute('data-district-lower') || '';
                 const star = card.getAttribute('data-star') || '';
-                const district = card.getAttribute('data-district') || '';
                 const category = card.getAttribute('data-category') || '';
 
                 const matchesSearch = title.includes(searchValue);
+                const matchesDistrict = !districtSearchValue || districtLower.includes(districtSearchValue);
                 const matchesStar = !starValue || star === starValue;
-                const matchesDistrict = !districtValue || district === districtValue;
                 const matchesCategory = !categoryValue || category === categoryValue;
 
-                if (matchesSearch && matchesStar && matchesDistrict && matchesCategory) {
+                if (matchesSearch && matchesDistrict && matchesStar && matchesCategory) {
                     card.style.display = 'flex';
                     visibleCount++;
                 } else {
@@ -221,7 +226,7 @@ async function buildWebsite() {
 </html>`;
 
         fs.writeFileSync(path.join(distDir, 'index.html'), indexHtml);
-        console.log(' 📄 Đã tạo trang chủ với Tìm kiếm & Bộ lọc: dist/index.html');
+        console.log(' 📄 Đã cập nhật tính năng Tìm kiếm Xã thông minh: dist/index.html');
         console.log('🎉 Hoàn thành xuất sắc!');
 
     } catch (error) {
