@@ -5,9 +5,9 @@ const path = require('path');
 const SPREADSHEET_ID = '1qRORgbuVhvake0Ny3ek5dkKSxN0VKlTnBauiQOS5hzA';
 const CSV_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet=Products`;
 
-// LINK MẠNG XÃ HỘI CỦA BẠN (Thay bằng link thực tế của bạn)
-const FACEBOOK_URL = "https://facebook.com/ocopquangngai.official"; // Thay link Fanpage Facebook của bạn ở đây
-const TIKTOK_URL = "https://tiktok.com/@ocop.qung.ngi";            // Thay link TikTok của bạn ở đây
+// LINK MẠNG XÃ HỘI CỦA BẠN
+const FACEBOOK_URL = "https://facebook.com/ocopquangngai.official"; 
+const TIKTOK_URL = "https://tiktok.com/@ocop.qung.ngi";            
 
 function parseCSV(csvText) {
     const lines = csvText.trim().split('\n');
@@ -108,7 +108,6 @@ async function buildWebsite() {
                 featuredProducts.push(productData);
             }
 
-            // Tạo file chi tiết
             let htmlContent = templateHtml
                 .replaceAll('{{TITLE}}', product.title || '')
                 .replaceAll('{{DESCRIPTION}}', product.description || '')
@@ -141,7 +140,6 @@ async function buildWebsite() {
             `;
         }
 
-        // 1. Chuyên mục SẢN PHẨM NỔI BẬT (Đã đổi tên)
         let featuredSectionHtml = '';
         if (featuredProducts.length > 0) {
             const featuredCards = featuredProducts.map(p => renderCard(p)).join('');
@@ -158,7 +156,6 @@ async function buildWebsite() {
             `;
         }
 
-        // 2. Các Chuyên mục Ngành hàng
         let categorySectionsHtml = '';
         for (const [catName, catProducts] of Object.entries(categoriesMap)) {
             const cardsHtml = catProducts.map(p => renderCard(p)).join('');
@@ -179,38 +176,38 @@ async function buildWebsite() {
         let producerDatalistOptions = Array.from(producersSet).sort().map(p => `<option value="${p}">`).join('');
         let categoryOptions = Object.keys(categoriesMap).map(c => `<option value="${c}">${c}</option>`).join('');
 
-        // 3. HTML Trang chủ hoàn chỉnh có nút Facebook & TikTok
         const indexHtml = `<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sản Phẩm OCOP Quảng Ngãi - 535 Đặc Sản Chính Gốc</title>
-    <meta name="description" content="Danh mục tổng hợp 535 sản phẩm OCOP Quảng Ngãi phân theo chuyên mục ngành hàng.">
+    <meta name="description" content="Danh mục tổng hợp 535 sản phẩm OCOP Quảng Ngãi thuộc 96 xã phường thị trấn.">
     <style>
         body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f6f8; color: #333; }
         header { text-align: center; padding: 35px 20px 25px 20px; background: #00875a; color: white; }
         header h1 { margin: 0 0 8px 0; font-size: 26px; }
-        header p { margin: 0 0 15px 0; font-size: 14px; opacity: 0.9; }
+        header p { margin: 0 0 15px 0; font-size: 14px; opacity: 0.95; }
 
-        /* Nút Mạng Xã Hội */
-        .social-links { display: flex; justify-content: center; gap: 12px; margin-top: 10px; }
-        .social-btn {
+        /* Cụm liên hệ mạng xã hội dạng biểu tượng */
+        .social-contact { display: inline-flex; align-items: center; gap: 8px; margin-top: 5px; font-size: 14px; font-weight: 500; }
+        .social-icons { display: inline-flex; gap: 8px; }
+        .social-icon-btn {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
-            padding: 8px 16px;
-            border-radius: 20px;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
             color: white;
             text-decoration: none;
-            font-size: 13px;
-            font-weight: bold;
+            font-size: 16px;
             transition: transform 0.2s, opacity 0.2s;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
-        .social-btn:hover { transform: translateY(-2px); opacity: 0.9; }
-        .btn-facebook { background-color: #1877f2; }
-        .btn-tiktok { background-color: #000000; border: 1px solid #333; }
+        .social-icon-btn:hover { transform: scale(1.1); opacity: 0.9; }
+        .icon-fb { background-color: #1877f2; }
+        .icon-tt { background-color: #000000; border: 1px solid #444; }
 
         .container { max-width: 1250px; margin: 25px auto; padding: 0 15px; }
         
@@ -280,16 +277,15 @@ async function buildWebsite() {
 
     <header>
         <h1>SẢN PHẨM OCOP QUẢNG NGÃI</h1>
-        <p>Catalog tra cứu 535 sản phẩm OCOP chính gốc phân theo chuyên mục</p>
+        <p>Tra cứu 535 sản phẩm OCOP thuộc 96 Xã/Phường/Thị trấn</p>
         
-        <!-- Cụm nút Liên hệ Facebook & TikTok -->
-        <div class="social-links">
-            <a href="${FACEBOOK_URL}" target="_blank" class="social-btn btn-facebook">
-                📘 Fanpage Facebook
-            </a>
-            <a href="${TIKTOK_URL}" target="_blank" class="social-btn btn-tiktok">
-                🎵 Kênh TikTok
-            </a>
+        <!-- Cụm Liên hệ với biểu tượng mạng xã hội -->
+        <div class="social-contact">
+            <span>Liên hệ:</span>
+            <div class="social-icons">
+                <a href="${FACEBOOK_URL}" target="_blank" class="social-icon-btn icon-fb" title="Facebook">📘</a>
+                <a href="${TIKTOK_URL}" target="_blank" class="social-icon-btn icon-tt" title="TikTok">🎵</a>
+            </div>
         </div>
     </header>
 
@@ -323,9 +319,12 @@ async function buildWebsite() {
 
     <footer>
         <p>&copy; 2026 - Catalog OCOP Quảng Ngãi</p>
-        <div class="social-links" style="margin-top: 10px;">
-            <a href="${FACEBOOK_URL}" target="_blank" class="social-btn btn-facebook">Facebook</a>
-            <a href="${TIKTOK_URL}" target="_blank" class="social-btn btn-tiktok">TikTok</a>
+        <div class="social-contact" style="margin-top: 8px;">
+            <span>Liên hệ:</span>
+            <div class="social-icons">
+                <a href="${FACEBOOK_URL}" target="_blank" class="social-icon-btn icon-fb" title="Facebook">📘</a>
+                <a href="${TIKTOK_URL}" target="_blank" class="social-icon-btn icon-tt" title="TikTok">🎵</a>
+            </div>
         </div>
     </footer>
 
@@ -377,7 +376,7 @@ async function buildWebsite() {
 </html>`;
 
         fs.writeFileSync(path.join(distDir, 'index.html'), indexHtml);
-        console.log(' 📄 Đã cập nhật nút MXH và chuyên mục NỔI BẬT: dist/index.html');
+        console.log(' 📄 Đã cập nhật tiêu đề và biểu tượng liên hệ: dist/index.html');
         console.log('🎉 Hoàn thành xuất sắc!');
 
     } catch (error) {
