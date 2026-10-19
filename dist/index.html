@@ -7,11 +7,31 @@
     <meta name="description" content="Danh mục tổng hợp 535 sản phẩm OCOP Quảng Ngãi phân theo chuyên mục ngành hàng.">
     <style>
         body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f6f8; color: #333; }
-        header { text-align: center; padding: 35px 20px; background: #00875a; color: white; }
+        header { text-align: center; padding: 35px 20px 25px 20px; background: #00875a; color: white; }
         header h1 { margin: 0 0 8px 0; font-size: 26px; }
+        header p { margin: 0 0 15px 0; font-size: 14px; opacity: 0.9; }
+
+        /* Nút Mạng Xã Hội */
+        .social-links { display: flex; justify-content: center; gap: 12px; margin-top: 10px; }
+        .social-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            color: white;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: bold;
+            transition: transform 0.2s, opacity 0.2s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .social-btn:hover { transform: translateY(-2px); opacity: 0.9; }
+        .btn-facebook { background-color: #1877f2; }
+        .btn-tiktok { background-color: #000000; border: 1px solid #333; }
+
         .container { max-width: 1250px; margin: 25px auto; padding: 0 15px; }
         
-        /* Khung bộ lọc */
         .filter-section {
             background: white;
             padding: 15px 20px;
@@ -32,7 +52,6 @@
         }
         .filter-section input:focus, .filter-section select:focus { border-color: #00875a; outline: none; }
 
-        /* Chuyên mục & Cuộn ngang */
         .category-section { margin-bottom: 35px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
         .featured-section { background: #fff8f0; border: 1px solid #ffe0b2; }
         .category-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #00875a; }
@@ -41,7 +60,6 @@
         .featured-section .category-header h2 { color: #e65100; }
         .count-tag { background: #e8f5e9; color: #2e7d32; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; }
 
-        /* Hàng ngang cuộn trái/phải */
         .horizontal-scroll {
             display: flex;
             gap: 15px;
@@ -54,9 +72,8 @@
         .horizontal-scroll::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
         .horizontal-scroll::-webkit-scrollbar-thumb:hover { background: #00875a; }
 
-        /* Thẻ sản phẩm */
         .card {
-            flex: 0 0 220px; /* Cố định chiều rộng thẻ trong hàng cuộn ngang */
+            flex: 0 0 220px;
             background: #fafafa;
             padding: 12px;
             border-radius: 8px;
@@ -74,7 +91,7 @@
         .card .producer-info { font-size: 11px; color: #00875a; margin: 3px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .btn-detail { display: block; text-align: center; background: #00875a; color: white; padding: 8px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 12px; margin-top: 10px; }
         .btn-detail:hover { background: #006c47; }
-        footer { text-align: center; padding: 20px; color: #777; font-size: 13px; margin-top: 30px; }
+        footer { text-align: center; padding: 25px; color: #777; font-size: 13px; margin-top: 30px; background: #fff; border-top: 1px solid #eee; }
     </style>
 </head>
 <body>
@@ -82,6 +99,16 @@
     <header>
         <h1>SẢN PHẨM OCOP QUẢNG NGÃI</h1>
         <p>Catalog tra cứu 535 sản phẩm OCOP chính gốc phân theo chuyên mục</p>
+        
+        <!-- Cụm nút Liên hệ Facebook & TikTok -->
+        <div class="social-links">
+            <a href="https://facebook.com/ocopquangngai.official" target="_blank" class="social-btn btn-facebook">
+                📘 Fanpage Facebook
+            </a>
+            <a href="https://tiktok.com/@ocopquangngai" target="_blank" class="social-btn btn-tiktok">
+                🎵 Kênh TikTok
+            </a>
+        </div>
     </header>
 
     <main class="container">
@@ -111,24 +138,24 @@
         
                 <section class="category-section featured-section">
                     <div class="category-header">
-                        <h2>🔥 SẢN PHẨM NỔI BẬT KHUYÊN DÙNG</h2>
-                        <span class="count-tag">2 sản phẩm</span>
+                        <h2>🔥 SẢN PHẨM NỔI BẬT</h2>
+                        <span class="count-tag">3 sản phẩm</span>
                     </div>
                     <div class="horizontal-scroll">
                         
                 <div class="card" 
-                     data-title="tỏi đen nhiều nhánh" 
-                     data-star="4" 
+                     data-title="tỏi lý sơn" 
+                     data-star="5" 
                      data-district="Đặc khu Lý Sơn" 
                      data-district-lower="đặc khu lý sơn"
                      data-category="Thực phẩm"
                      data-producer-lower="công ty tnhh thương mại và dịch vụ phú sinh.">
-                    <span class="badge">OCOP 4 SAO</span>
-                    <img src="https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=500" alt="Tỏi đen nhiều nhánh" loading="lazy">
-                    <h3>Tỏi đen nhiều nhánh</h3>
+                    <span class="badge">OCOP 5 SAO</span>
+                    <img src="https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=500" alt="Tỏi Lý Sơn" loading="lazy">
+                    <h3>Tỏi Lý Sơn</h3>
                     <p class="meta">📍 Đặc khu Lý Sơn | 🏷️ Thực phẩm</p>
                     <p class="producer-info">🏢 <em>Công ty TNHH Thương mại và dịch vụ Phú Sinh.</em></p>
-                    <a href="toi-den-nhieu-nhanh.html" class="btn-detail">Xem chi tiết</a>
+                    <a href="toi-ly-son.html" class="btn-detail">Xem chi tiết</a>
                 </div>
             
                 <div class="card" 
@@ -144,6 +171,21 @@
                     <p class="meta">📍 Xã Long Phụng | 🏷️ Thực phẩm</p>
                     <p class="producer-info">🏢 <em>Hợp tác xã sản xuất và kinh doanh nấm Đức Nhuận.</em></p>
                     <a href="nam-linh-chi.html" class="btn-detail">Xem chi tiết</a>
+                </div>
+            
+                <div class="card" 
+                     data-title="rượu sâm ngọc linh k5 premium" 
+                     data-star="4" 
+                     data-district="Xã Măng Ri" 
+                     data-district-lower="xã măng ri"
+                     data-category="Đồ uống"
+                     data-producer-lower="công ty cổ phần vingin.">
+                    <span class="badge">OCOP 4 SAO</span>
+                    <img src="https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=500" alt="Rượu Sâm Ngọc Linh K5 Premium" loading="lazy">
+                    <h3>Rượu Sâm Ngọc Linh K5 Premium</h3>
+                    <p class="meta">📍 Xã Măng Ri | 🏷️ Đồ uống</p>
+                    <p class="producer-info">🏢 <em>Công ty cổ phần Vingin.</em></p>
+                    <a href="ruou-sam-ngoc-linh-k5-premium.html" class="btn-detail">Xem chi tiết</a>
                 </div>
             
                     </div>
@@ -8239,9 +8281,12 @@
 
     <footer>
         <p>&copy; 2026 - Catalog OCOP Quảng Ngãi</p>
+        <div class="social-links" style="margin-top: 10px;">
+            <a href="https://facebook.com/ocopquangngai.official" target="_blank" class="social-btn btn-facebook">Facebook</a>
+            <a href="https://tiktok.com/@ocopquangngai" target="_blank" class="social-btn btn-tiktok">TikTok</a>
+        </div>
     </footer>
 
-    <!-- Logic Lọc Tức Thời -->
     <script>
         function filterProducts() {
             const searchValue = document.getElementById('searchInput').value.toLowerCase().trim();
@@ -8277,7 +8322,6 @@
                     }
                 });
 
-                // Nếu chuyên mục không có sản phẩm nào phù hợp thì ẩn luôn cả tiêu đề chuyên mục đó
                 if (visibleCardsInSection > 0) {
                     section.style.display = 'block';
                 } else {

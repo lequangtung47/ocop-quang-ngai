@@ -5,6 +5,10 @@ const path = require('path');
 const SPREADSHEET_ID = '1qRORgbuVhvake0Ny3ek5dkKSxN0VKlTnBauiQOS5hzA';
 const CSV_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet=Products`;
 
+// LINK MẠNG XÃ HỘI CỦA BẠN (Thay bằng link thực tế của bạn)
+const FACEBOOK_URL = "https://facebook.com/ocopquangngai.official"; // Thay link Fanpage Facebook của bạn ở đây
+const TIKTOK_URL = "https://tiktok.com/@ocopquangngai";            // Thay link TikTok của bạn ở đây
+
 function parseCSV(csvText) {
     const lines = csvText.trim().split('\n');
     if (lines.length < 2) return [];
@@ -64,9 +68,8 @@ async function buildWebsite() {
         const templatePath = path.join(__dirname, 'template.html');
         const templateHtml = fs.readFileSync(templatePath, 'utf8');
 
-        // Phân loại sản phẩm theo Nhóm ngành hàng & Nổi bật
         const featuredProducts = [];
-        const categoriesMap = {}; // { "Thực phẩm": [...], "Đồ uống": [...] }
+        const categoriesMap = {};
         const districtsSet = new Set();
         const producersSet = new Set();
 
@@ -82,7 +85,6 @@ async function buildWebsite() {
             districtsSet.add(district);
             if (producer) producersSet.add(producer);
 
-            // Gom nhóm ngành hàng
             if (!categoriesMap[category]) {
                 categoriesMap[category] = [];
             }
@@ -106,7 +108,7 @@ async function buildWebsite() {
                 featuredProducts.push(productData);
             }
 
-            // Tạo trang HTML chi tiết từng sản phẩm
+            // Tạo file chi tiết
             let htmlContent = templateHtml
                 .replaceAll('{{TITLE}}', product.title || '')
                 .replaceAll('{{DESCRIPTION}}', product.description || '')
@@ -120,7 +122,6 @@ async function buildWebsite() {
             fs.writeFileSync(path.join(distDir, fileName), htmlContent);
         });
 
-        // Hàm hỗ trợ tạo thẻ HTML cho 1 sản phẩm
         function renderCard(p) {
             return `
                 <div class="card" 
@@ -140,14 +141,14 @@ async function buildWebsite() {
             `;
         }
 
-        // 1. Tạo HTML cho Chuyên mục Nổi Bật (nếu có)
+        // 1. Chuyên mục SẢN PHẨM NỔI BẬT (Đã đổi tên)
         let featuredSectionHtml = '';
         if (featuredProducts.length > 0) {
             const featuredCards = featuredProducts.map(p => renderCard(p)).join('');
             featuredSectionHtml = `
                 <section class="category-section featured-section">
                     <div class="category-header">
-                        <h2>🔥 SẢN PHẨM NỔI BẬT KHUYÊN DÙNG</h2>
+                        <h2>🔥 SẢN PHẨM NỔI BẬT</h2>
                         <span class="count-tag">${featuredProducts.length} sản phẩm</span>
                     </div>
                     <div class="horizontal-scroll">
@@ -157,7 +158,7 @@ async function buildWebsite() {
             `;
         }
 
-        // 2. Tạo HTML cho các Chuyên mục Ngành hàng
+        // 2. Các Chuyên mục Ngành hàng
         let categorySectionsHtml = '';
         for (const [catName, catProducts] of Object.entries(categoriesMap)) {
             const cardsHtml = catProducts.map(p => renderCard(p)).join('');
@@ -178,7 +179,7 @@ async function buildWebsite() {
         let producerDatalistOptions = Array.from(producersSet).sort().map(p => `<option value="${p}">`).join('');
         let categoryOptions = Object.keys(categoriesMap).map(c => `<option value="${c}">${c}</option>`).join('');
 
-        // 3. Giao diện trang chủ hoàn chỉnh
+        // 3. HTML Trang chủ hoàn chỉnh có nút Facebook & TikTok
         const indexHtml = `<!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -188,11 +189,31 @@ async function buildWebsite() {
     <meta name="description" content="Danh mục tổng hợp 535 sản phẩm OCOP Quảng Ngãi phân theo chuyên mục ngành hàng.">
     <style>
         body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f6f8; color: #333; }
-        header { text-align: center; padding: 35px 20px; background: #00875a; color: white; }
+        header { text-align: center; padding: 35px 20px 25px 20px; background: #00875a; color: white; }
         header h1 { margin: 0 0 8px 0; font-size: 26px; }
+        header p { margin: 0 0 15px 0; font-size: 14px; opacity: 0.9; }
+
+        /* Nút Mạng Xã Hội */
+        .social-links { display: flex; justify-content: center; gap: 12px; margin-top: 10px; }
+        .social-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            color: white;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: bold;
+            transition: transform 0.2s, opacity 0.2s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .social-btn:hover { transform: translateY(-2px); opacity: 0.9; }
+        .btn-facebook { background-color: #1877f2; }
+        .btn-tiktok { background-color: #000000; border: 1px solid #333; }
+
         .container { max-width: 1250px; margin: 25px auto; padding: 0 15px; }
         
-        /* Khung bộ lọc */
         .filter-section {
             background: white;
             padding: 15px 20px;
@@ -213,7 +234,6 @@ async function buildWebsite() {
         }
         .filter-section input:focus, .filter-section select:focus { border-color: #00875a; outline: none; }
 
-        /* Chuyên mục & Cuộn ngang */
         .category-section { margin-bottom: 35px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
         .featured-section { background: #fff8f0; border: 1px solid #ffe0b2; }
         .category-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #00875a; }
@@ -222,7 +242,6 @@ async function buildWebsite() {
         .featured-section .category-header h2 { color: #e65100; }
         .count-tag { background: #e8f5e9; color: #2e7d32; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; }
 
-        /* Hàng ngang cuộn trái/phải */
         .horizontal-scroll {
             display: flex;
             gap: 15px;
@@ -235,9 +254,8 @@ async function buildWebsite() {
         .horizontal-scroll::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
         .horizontal-scroll::-webkit-scrollbar-thumb:hover { background: #00875a; }
 
-        /* Thẻ sản phẩm */
         .card {
-            flex: 0 0 220px; /* Cố định chiều rộng thẻ trong hàng cuộn ngang */
+            flex: 0 0 220px;
             background: #fafafa;
             padding: 12px;
             border-radius: 8px;
@@ -255,7 +273,7 @@ async function buildWebsite() {
         .card .producer-info { font-size: 11px; color: #00875a; margin: 3px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .btn-detail { display: block; text-align: center; background: #00875a; color: white; padding: 8px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 12px; margin-top: 10px; }
         .btn-detail:hover { background: #006c47; }
-        footer { text-align: center; padding: 20px; color: #777; font-size: 13px; margin-top: 30px; }
+        footer { text-align: center; padding: 25px; color: #777; font-size: 13px; margin-top: 30px; background: #fff; border-top: 1px solid #eee; }
     </style>
 </head>
 <body>
@@ -263,6 +281,16 @@ async function buildWebsite() {
     <header>
         <h1>SẢN PHẨM OCOP QUẢNG NGÃI</h1>
         <p>Catalog tra cứu 535 sản phẩm OCOP chính gốc phân theo chuyên mục</p>
+        
+        <!-- Cụm nút Liên hệ Facebook & TikTok -->
+        <div class="social-links">
+            <a href="${FACEBOOK_URL}" target="_blank" class="social-btn btn-facebook">
+                📘 Fanpage Facebook
+            </a>
+            <a href="${TIKTOK_URL}" target="_blank" class="social-btn btn-tiktok">
+                🎵 Kênh TikTok
+            </a>
+        </div>
     </header>
 
     <main class="container">
@@ -295,9 +323,12 @@ async function buildWebsite() {
 
     <footer>
         <p>&copy; 2026 - Catalog OCOP Quảng Ngãi</p>
+        <div class="social-links" style="margin-top: 10px;">
+            <a href="${FACEBOOK_URL}" target="_blank" class="social-btn btn-facebook">Facebook</a>
+            <a href="${TIKTOK_URL}" target="_blank" class="social-btn btn-tiktok">TikTok</a>
+        </div>
     </footer>
 
-    <!-- Logic Lọc Tức Thời -->
     <script>
         function filterProducts() {
             const searchValue = document.getElementById('searchInput').value.toLowerCase().trim();
@@ -333,7 +364,6 @@ async function buildWebsite() {
                     }
                 });
 
-                // Nếu chuyên mục không có sản phẩm nào phù hợp thì ẩn luôn cả tiêu đề chuyên mục đó
                 if (visibleCardsInSection > 0) {
                     section.style.display = 'block';
                 } else {
@@ -347,7 +377,7 @@ async function buildWebsite() {
 </html>`;
 
         fs.writeFileSync(path.join(distDir, 'index.html'), indexHtml);
-        console.log(' 📄 Đã cập nhật giao diện Chuyên mục & Cuộn ngang: dist/index.html');
+        console.log(' 📄 Đã cập nhật nút MXH và chuyên mục NỔI BẬT: dist/index.html');
         console.log('🎉 Hoàn thành xuất sắc!');
 
     } catch (error) {
