@@ -24,6 +24,24 @@ function parseCSV(csvText) {
     return result;
 }
 
+// Hàm hỗ trợ copy thư mục ảnh
+function copyDirSync(src, dest) {
+    if (!fs.existsSync(src)) return;
+    if (!fs.existsSync(dest)) {
+        fs.mkdirSync(dest, { recursive: true });
+    }
+    const entries = fs.readdirSync(src, { withFileTypes: true });
+    for (let entry of entries) {
+        let srcPath = path.join(src, entry.name);
+        let destPath = path.join(dest, entry.name);
+        if (entry.isDirectory()) {
+            copyDirSync(srcPath, destPath);
+        } else {
+            fs.copyFileSync(srcPath, destPath);
+        }
+    }
+}
+
 async function buildWebsite() {
     try {
         console.log('🔄 Đang tải dữ liệu từ Google Sheets...');
@@ -37,6 +55,14 @@ async function buildWebsite() {
             fs.mkdirSync(distDir);
         }
 
+        // Tự động copy thư mục images sang dist/images nếu có
+        const imagesSrc = path.join(__dirname, 'images');
+        const imagesDest = path.join(distDir, 'images');
+        if (fs.existsSync(imagesSrc)) {
+            copyDirSync(imagesSrc, imagesDest);
+            console.log(' 🖼️ Đã tự động sao chép thư mục ảnh sang dist/images');
+        }
+
         const templatePath = path.join(__dirname, 'template.html');
         const templateHtml = fs.readFileSync(templatePath, 'utf8');
 
@@ -45,14 +71,12 @@ async function buildWebsite() {
         const categoriesSet = new Set();
         const producersSet = new Set();
 
-        // 1. Tạo trang chi tiết & thu thập dữ liệu bộ lọc
         products.forEach(product => {
             if (product.status !== 'published') return;
 
             const star = product.star || '3';
             const district = product.district || 'Khác';
             const category = product.category || 'Khác';
-            // Lấy thông tin đơn vị sản xuất từ mô tả/nội dung hoặc bổ sung fallback
             const producer = product.producer || (product.description && product.description.includes('Sản xuất bởi') ? product.description.split('Sản xuất bởi')[1].trim() : '');
 
             districtsSet.add(district);
@@ -60,6 +84,7 @@ async function buildWebsite() {
             if (producer) producersSet.add(producer);
 
             const fileName = `${product.slug || 'san-pham-' + product.id}.html`;
+            const imageUrl = product.image_url || 'https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=500';
 
             // Tạo file chi tiết
             let htmlContent = templateHtml
@@ -68,13 +93,12 @@ async function buildWebsite() {
                 .replaceAll('{{STAR}}', star)
                 .replaceAll('{{DISTRICT}}', district)
                 .replaceAll('{{CATEGORY}}', category)
-                .replaceAll('{{IMAGE_URL}}', product.image_url || '')
+                .replaceAll('{{IMAGE_URL}}', imageUrl)
                 .replaceAll('{{CONTENT}}', product.content || '')
                 .replaceAll('{{AFFILIATE_LINK}}', product.affiliate_link || '#');
 
             fs.writeFileSync(path.join(distDir, fileName), htmlContent);
 
-            // Thẻ sản phẩm gắn thêm thuộc tính data-producer-lower để phục vụ tìm kiếm chủ cơ sở
             productCardsHtml += `
                 <div class="card" 
                      data-title="${(product.title || '').toLowerCase()}" 
@@ -84,7 +108,7 @@ async function buildWebsite() {
                      data-category="${category}"
                      data-producer-lower="${producer.toLowerCase()}">
                     <span class="badge">OCOP ${star} SAO</span>
-                    <img src="${product.image_url || ''}" alt="${product.title || ''}" loading="lazy">
+                    <img src="${imageUrl}" alt="${product.title || ''}" loading="lazy">
                     <h3>${product.title || ''}</h3>
                     <p><strong>📍 ${district}</strong> | 🏷️ ${category}</p>
                     ${producer ? `<p class="producer-info">🏢 <em>${producer}</em></p>` : ''}
@@ -94,12 +118,10 @@ async function buildWebsite() {
             `;
         });
 
-        // Danh sách gợi ý datalist cho Xã và Đơn vị sản xuất
         let districtDatalistOptions = Array.from(districtsSet).sort().map(d => `<option value="${d}">`).join('');
         let producerDatalistOptions = Array.from(producersSet).sort().map(p => `<option value="${p}">`).join('');
         let categoryOptions = Array.from(categoriesSet).map(c => `<option value="${c}">${c}</option>`).join('');
 
-        // 2. Giao diện trang chủ bổ sung Ô Tìm Kiếm Chủ Cơ Sở
         const indexHtml = `<!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -113,7 +135,6 @@ async function buildWebsite() {
         header h1 { margin: 0 0 10px 0; }
         .container { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
         
-        /* Khung tìm kiếm & bộ lọc */
         .filter-section {
             background: white;
             padding: 20px;
@@ -159,24 +180,14 @@ async function buildWebsite() {
     </header>
 
     <main class="container">
-        <!-- Khung Tìm Kiếm Đa Chiều Nâng Cấp -->
         <div class="filter-section">
-            <!-- 1. Tìm tên sản phẩm -->
             <input type="text" id="searchInput" placeholder="🔍 Tìm sản phẩm (vd: Tỏi, Mạch nha...)" onkeyup="filterProducts()">
-            
-            <!-- 2. Tìm tên Chủ cơ sở / Đơn vị sản xuất -->
             <input type="text" id="producerInput" list="producerList" placeholder="🏢 Tìm Chủ cơ sở / HTX / Công ty..." oninput="filterProducts()">
-            <datalist id="producerList">
-                ${producerDatalistOptions}
-            </datalist>
+            <datalist id="producerList">${producerDatalistOptions}</datalist>
 
-            <!-- 3. Tìm tên Xã / Phường -->
             <input type="text" id="districtInput" list="districtList" placeholder="📍 Tìm Xã / Phường (vd: Lý Sơn, Măng Đen...)" oninput="filterProducts()">
-            <datalist id="districtList">
-                ${districtDatalistOptions}
-            </datalist>
+            <datalist id="districtList">${districtDatalistOptions}</datalist>
 
-            <!-- 4. Lọc theo Sao -->
             <select id="starFilter" onchange="filterProducts()">
                 <option value="">⭐ Tất cả Xếp Hạng Sao</option>
                 <option value="5">OCOP 5 Sao</option>
@@ -184,7 +195,6 @@ async function buildWebsite() {
                 <option value="3">OCOP 3 Sao</option>
             </select>
 
-            <!-- 5. Lọc theo Nhóm ngành -->
             <select id="categoryFilter" onchange="filterProducts()">
                 <option value="">🏷️ Tất cả Phân Loại</option>
                 ${categoryOptions}
@@ -202,7 +212,6 @@ async function buildWebsite() {
         <p>&copy; 2026 - Catalog OCOP Quảng Ngãi</p>
     </footer>
 
-    <!-- Logic Tìm Kiếm Đa Chiều Tức Thời -->
     <script>
         function filterProducts() {
             const searchValue = document.getElementById('searchInput').value.toLowerCase().trim();
@@ -243,7 +252,7 @@ async function buildWebsite() {
 </html>`;
 
         fs.writeFileSync(path.join(distDir, 'index.html'), indexHtml);
-        console.log(' 📄 Đã cập nhật tính năng Tìm kiếm Chủ cơ sở sản xuất: dist/index.html');
+        console.log(' 📄 Đã cập nhật tính năng tự động copy ảnh: dist/index.html');
         console.log('🎉 Hoàn thành xuất sắc!');
 
     } catch (error) {
