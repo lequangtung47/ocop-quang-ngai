@@ -7,7 +7,7 @@ const CSV_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/t
 
 // LINK MẠNG XÃ HỘI CỦA BẠN (Thay bằng link thực tế của bạn)
 const FACEBOOK_URL = "https://facebook.com/ocopquangngai.official"; // Thay link Fanpage Facebook của bạn ở đây
-const TIKTOK_URL = "https://tiktok.com/@ocopquangngai";            // Thay link TikTok của bạn ở đây
+const TIKTOK_URL = "https://tiktok.com/@ocop.qung.ngi";            // Thay link TikTok của bạn ở đây
 
 function parseCSV(csvText) {
     const lines = csvText.trim().split('\n');
