@@ -43,6 +43,7 @@ async function buildWebsite() {
         let productCardsHtml = '';
         const districtsSet = new Set();
         const categoriesSet = new Set();
+        const producersSet = new Set();
 
         // 1. Tạo trang chi tiết & thu thập dữ liệu bộ lọc
         products.forEach(product => {
@@ -51,9 +52,12 @@ async function buildWebsite() {
             const star = product.star || '3';
             const district = product.district || 'Khác';
             const category = product.category || 'Khác';
+            // Lấy thông tin đơn vị sản xuất từ mô tả/nội dung hoặc bổ sung fallback
+            const producer = product.producer || (product.description && product.description.includes('Sản xuất bởi') ? product.description.split('Sản xuất bởi')[1].trim() : '');
 
             districtsSet.add(district);
             categoriesSet.add(category);
+            if (producer) producersSet.add(producer);
 
             const fileName = `${product.slug || 'san-pham-' + product.id}.html`;
 
@@ -70,29 +74,32 @@ async function buildWebsite() {
 
             fs.writeFileSync(path.join(distDir, fileName), htmlContent);
 
-            // Thẻ sản phẩm gắn thêm thuộc tính data-district-lower để phục vụ tìm kiếm xã nhanh
+            // Thẻ sản phẩm gắn thêm thuộc tính data-producer-lower để phục vụ tìm kiếm chủ cơ sở
             productCardsHtml += `
                 <div class="card" 
                      data-title="${(product.title || '').toLowerCase()}" 
                      data-star="${star}" 
                      data-district="${district}" 
                      data-district-lower="${district.toLowerCase()}"
-                     data-category="${category}">
+                     data-category="${category}"
+                     data-producer-lower="${producer.toLowerCase()}">
                     <span class="badge">OCOP ${star} SAO</span>
                     <img src="${product.image_url || ''}" alt="${product.title || ''}" loading="lazy">
                     <h3>${product.title || ''}</h3>
                     <p><strong>📍 ${district}</strong> | 🏷️ ${category}</p>
+                    ${producer ? `<p class="producer-info">🏢 <em>${producer}</em></p>` : ''}
                     <p class="desc">${product.description || ''}</p>
                     <a href="${fileName}" class="btn-detail">Xem chi tiết</a>
                 </div>
             `;
         });
 
-        // Tạo danh sách datalist phục vụ gợi ý tên Xã/Thị trấn khi gõ
+        // Danh sách gợi ý datalist cho Xã và Đơn vị sản xuất
         let districtDatalistOptions = Array.from(districtsSet).sort().map(d => `<option value="${d}">`).join('');
+        let producerDatalistOptions = Array.from(producersSet).sort().map(p => `<option value="${p}">`).join('');
         let categoryOptions = Array.from(categoriesSet).map(c => `<option value="${c}">${c}</option>`).join('');
 
-        // 2. Giao diện trang chủ tích hợp Ô Tìm Kiếm Xã/Thị Trấn
+        // 2. Giao diện trang chủ bổ sung Ô Tìm Kiếm Chủ Cơ Sở
         const indexHtml = `<!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -114,7 +121,7 @@ async function buildWebsite() {
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
             margin-bottom: 25px;
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 15px;
         }
         .filter-section input, .filter-section select {
@@ -136,7 +143,8 @@ async function buildWebsite() {
         .card img { width: 100%; height: 180px; object-fit: cover; border-radius: 6px; margin-bottom: 12px; }
         .badge { position: absolute; top: 30px; left: 30px; background: #ff9800; color: white; padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; }
         .card h3 { margin: 10px 0 5px 0; font-size: 18px; }
-        .card p { font-size: 13px; color: #666; margin: 5px 0; }
+        .card p { font-size: 13px; color: #666; margin: 4px 0; }
+        .card .producer-info { font-size: 12px; color: #00875a; font-weight: 500; }
         .card .desc { font-size: 13px; color: #777; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         .btn-detail { display: block; text-align: center; background: #00875a; color: white; padding: 10px; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 15px; }
         .btn-detail:hover { background: #006c47; }
@@ -151,18 +159,24 @@ async function buildWebsite() {
     </header>
 
     <main class="container">
-        <!-- Khung Tìm Kiếm & Bộ Lọc Nâng Cấp -->
+        <!-- Khung Tìm Kiếm Đa Chiều Nâng Cấp -->
         <div class="filter-section">
-            <!-- 1. Tìm theo tên sản phẩm -->
-            <input type="text" id="searchInput" placeholder="🔍 Tìm tên sản phẩm (vd: Tỏi, Mạch nha...)" onkeyup="filterProducts()">
+            <!-- 1. Tìm tên sản phẩm -->
+            <input type="text" id="searchInput" placeholder="🔍 Tìm sản phẩm (vd: Tỏi, Mạch nha...)" onkeyup="filterProducts()">
             
-            <!-- 2. Ô nhập tìm kiếm Xã/Phường có gợi ý thông minh -->
-            <input type="text" id="districtInput" list="districtList" placeholder="📍 Gõ tên Xã / Phường (vd: Lý Sơn, Măng Đen...)" oninput="filterProducts()">
+            <!-- 2. Tìm tên Chủ cơ sở / Đơn vị sản xuất -->
+            <input type="text" id="producerInput" list="producerList" placeholder="🏢 Tìm Chủ cơ sở / HTX / Công ty..." oninput="filterProducts()">
+            <datalist id="producerList">
+                ${producerDatalistOptions}
+            </datalist>
+
+            <!-- 3. Tìm tên Xã / Phường -->
+            <input type="text" id="districtInput" list="districtList" placeholder="📍 Tìm Xã / Phường (vd: Lý Sơn, Măng Đen...)" oninput="filterProducts()">
             <datalist id="districtList">
                 ${districtDatalistOptions}
             </datalist>
 
-            <!-- 3. Lọc theo Sao -->
+            <!-- 4. Lọc theo Sao -->
             <select id="starFilter" onchange="filterProducts()">
                 <option value="">⭐ Tất cả Xếp Hạng Sao</option>
                 <option value="5">OCOP 5 Sao</option>
@@ -170,7 +184,7 @@ async function buildWebsite() {
                 <option value="3">OCOP 3 Sao</option>
             </select>
 
-            <!-- 4. Lọc theo Nhóm ngành -->
+            <!-- 5. Lọc theo Nhóm ngành -->
             <select id="categoryFilter" onchange="filterProducts()">
                 <option value="">🏷️ Tất cả Phân Loại</option>
                 ${categoryOptions}
@@ -192,6 +206,7 @@ async function buildWebsite() {
     <script>
         function filterProducts() {
             const searchValue = document.getElementById('searchInput').value.toLowerCase().trim();
+            const producerSearchValue = document.getElementById('producerInput').value.toLowerCase().trim();
             const districtSearchValue = document.getElementById('districtInput').value.toLowerCase().trim();
             const starValue = document.getElementById('starFilter').value;
             const categoryValue = document.getElementById('categoryFilter').value;
@@ -201,16 +216,18 @@ async function buildWebsite() {
 
             cards.forEach(card => {
                 const title = card.getAttribute('data-title') || '';
+                const producerLower = card.getAttribute('data-producer-lower') || '';
                 const districtLower = card.getAttribute('data-district-lower') || '';
                 const star = card.getAttribute('data-star') || '';
                 const category = card.getAttribute('data-category') || '';
 
                 const matchesSearch = title.includes(searchValue);
+                const matchesProducer = !producerSearchValue || producerLower.includes(producerSearchValue);
                 const matchesDistrict = !districtSearchValue || districtLower.includes(districtSearchValue);
                 const matchesStar = !starValue || star === starValue;
                 const matchesCategory = !categoryValue || category === categoryValue;
 
-                if (matchesSearch && matchesDistrict && matchesStar && matchesCategory) {
+                if (matchesSearch && matchesProducer && matchesDistrict && matchesStar && matchesCategory) {
                     card.style.display = 'flex';
                     visibleCount++;
                 } else {
@@ -226,7 +243,7 @@ async function buildWebsite() {
 </html>`;
 
         fs.writeFileSync(path.join(distDir, 'index.html'), indexHtml);
-        console.log(' 📄 Đã cập nhật tính năng Tìm kiếm Xã thông minh: dist/index.html');
+        console.log(' 📄 Đã cập nhật tính năng Tìm kiếm Chủ cơ sở sản xuất: dist/index.html');
         console.log('🎉 Hoàn thành xuất sắc!');
 
     } catch (error) {
