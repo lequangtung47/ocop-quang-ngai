@@ -9,7 +9,6 @@ const CSV_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/t
 const FACEBOOK_URL = "https://facebook.com/ocopquangngai.official"; 
 const TIKTOK_URL = "https://tiktok.com/@ocop.qung.ngi";            
 
-// GIỚI HẠN SỐ SẢN PHẨM HIỂN THỊ BAN ĐẦU TRÊN MỖI HÀNG CUỘN NGANG
 const MAX_DISPLAY_PER_CATEGORY = 24;
 
 function parseCSV(csvText) {
@@ -95,8 +94,6 @@ async function buildWebsite() {
             }
 
             const fileName = `${product.slug || 'san-pham-' + product.id}.html`;
-            
-            // XỬ LÝ VẤN ĐỀ 1: Kiểm tra xem cột image_url có dữ liệu hay không
             const rawImageUrl = (product.image_url || '').trim();
 
             const productData = {
@@ -116,7 +113,6 @@ async function buildWebsite() {
                 featuredProducts.push(productData);
             }
 
-            // Tạo mã HTML hiển thị ảnh ở trang chi tiết (nếu không có link sẽ để trống)
             let detailImageHtml = '';
             if (rawImageUrl !== '') {
                 detailImageHtml = `
@@ -126,7 +122,6 @@ async function buildWebsite() {
                 `;
             }
 
-            // Xuất trang HTML chi tiết từng sản phẩm
             let htmlContent = templateHtml
                 .replaceAll('{{TITLE}}', product.title || '')
                 .replaceAll('{{DESCRIPTION}}', product.description || '')
@@ -142,7 +137,7 @@ async function buildWebsite() {
 
         const sortByOrder = (a, b) => a.sortOrder - b.sortOrder;
 
-        // Hàm tạo card sản phẩm ở trang chủ (Nếu không có link ảnh ➔ không xuất thẻ <img>)
+        // Hàm render card đã sửa lỗi bố cục: Hạng sao nằm độc lập ở header card, không bao giờ đè lên tên sản phẩm
         function renderCard(p, isHidden = false) {
             const imgHtml = p.imageUrl !== '' 
                 ? `<div class="img-wrapper"><img src="${p.imageUrl}" alt="${p.title || ''}" loading="lazy"></div>` 
@@ -157,7 +152,9 @@ async function buildWebsite() {
                      data-district-lower="${p.district.toLowerCase()}"
                      data-category="${p.category}"
                      data-producer-lower="${(p.producer || '').toLowerCase()}">
-                    <span class="badge star-${p.star}">⭐ OCOP ${p.star} SAO</span>
+                    <div class="card-top-bar">
+                        <span class="badge star-${p.star}">⭐ OCOP ${p.star} SAO</span>
+                    </div>
                     ${imgHtml}
                     <div class="card-body">
                         <h3>${p.title || ''}</h3>
@@ -435,6 +432,7 @@ async function buildWebsite() {
         .horizontal-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         .horizontal-scroll::-webkit-scrollbar-thumb:hover { background: var(--primary); }
 
+        /* Khắc phục hoàn toàn lỗi nhãn sao đè lên tiêu đề */
         .card {
             flex: 0 0 235px;
             background: var(--card-bg);
@@ -454,14 +452,9 @@ async function buildWebsite() {
             border-color: #cbd5e1;
         }
         
-        .img-wrapper { width: 100%; height: 155px; overflow: hidden; position: relative; background: #f1f5f9; }
-        .card img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s ease; }
-        .card:hover img { transform: scale(1.06); }
-
+        .card-top-bar { padding: 10px 12px 0 12px; }
         .badge { 
-            position: absolute; 
-            top: 10px; 
-            left: 10px; 
+            display: inline-block;
             background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); 
             color: white; 
             padding: 4px 9px; 
@@ -469,10 +462,13 @@ async function buildWebsite() {
             font-size: 10.5px; 
             font-weight: 700; 
             box-shadow: 0 2px 6px rgba(0,0,0,0.18);
-            z-index: 2;
         }
 
-        .card-body { padding: 12px 14px 4px 14px; flex-grow: 1; }
+        .img-wrapper { width: 100%; height: 145px; overflow: hidden; position: relative; background: #f1f5f9; margin-top: 8px; }
+        .card img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s ease; }
+        .card:hover img { transform: scale(1.06); }
+
+        .card-body { padding: 10px 14px 4px 14px; flex-grow: 1; }
         .card h3 { 
             margin: 0 0 6px 0; 
             font-size: 14.5px; 
@@ -534,7 +530,6 @@ async function buildWebsite() {
     </header>
 
     <main class="container">
-        <!-- Khung giới thiệu OCOP Quảng Ngãi (Thu gọn 1 hàng) -->
         <div class="intro-banner">
             <div class="intro-content" id="introText">
                 Chương trình "Mỗi xã một sản phẩm" (OCOP) là động lực phát triển kinh tế nông thôn bằng việc chuẩn hóa các sản phẩm đặc trưng mang đậm bản sắc văn hóa vùng miền; trong đó, Quảng Ngãi với tiềm năng phong phú từ đồng bằng ven sông Trà Khúc, khối núi Ngọc Linh hùng vĩ đến biển đảo Lý Sơn chính là vùng đất hội tụ nhiều sản phẩm đặc hữu trứ danh. Phát huy lợi thế này, kho tàng OCOP Quảng Ngãi với hàng trăm sản phẩm đạt chuẩn từ 3 đến 5 sao từ 96 xã, phường, thị trấn không chỉ là kết tinh tâm huyết và văn hóa địa phương mà còn là cầu nối uy tín đưa nông sản chất lượng cao vươn xa, góp phần thúc đẩy kinh tế tỉnh nhà phát triển bền vững.
@@ -542,7 +537,6 @@ async function buildWebsite() {
             <button class="btn-toggle-intro" id="btnToggleIntro" onclick="toggleIntro()">Xem thêm ▾</button>
         </div>
 
-        <!-- Khung Tìm Kiếm & Bộ Lọc -->
         <div class="filter-section">
             <div class="filter-control">
                 <input type="text" id="searchInput" placeholder="🔍 Tìm tên sản phẩm..." onkeyup="filterProducts()">
@@ -571,7 +565,6 @@ async function buildWebsite() {
             </div>
         </div>
 
-        <!-- Danh mục sản phẩm -->
         ${featuredSectionHtml}
         ${categorySectionsHtml}
     </main>
@@ -678,7 +671,7 @@ async function buildWebsite() {
 </html>`;
 
         fs.writeFileSync(path.join(distDir, 'index.html'), indexHtml);
-        console.log(' 📄 Đã hoàn tất xử lý ẩn ảnh trống & thêm xác nhận mua hàng!');
+        console.log(' 📄 Đã build xong toàn bộ giao diện hoàn hảo: dist/index.html');
         console.log('🎉 Hoàn thành xuất sắc!');
 
     } catch (error) {
