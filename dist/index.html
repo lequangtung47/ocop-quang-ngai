@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sản Phẩm OCOP Quảng Ngãi - 535 Đặc Sản Chính Gốc</title>
-    <meta name="description" content="Danh mục tổng hợp 535 sản phẩm OCOP Quảng Ngãi thuộc 96 xã phường thị trấn.">
+    <meta name="description" content="Danh mục tổng hợp hơn 500 sản phẩm OCOP Quảng Ngãi thuộc 96 xã phường thị trấn.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -56,22 +56,49 @@
 
         .container { max-width: 1280px; margin: 25px auto; padding: 0 20px; }
         
-        /* Khung Giới Thiệu OCOP Quảng Ngãi */
+        /* Khung Giới Thiệu OCOP Quảng Ngãi Thu Gọn 1 Dòng */
         .intro-banner {
             background: var(--card-bg);
             border-left: 5px solid var(--primary);
-            padding: 20px 25px;
+            padding: 14px 20px;
             border-radius: 12px;
             box-shadow: var(--shadow-sm);
             margin-bottom: 25px;
-            font-size: 14.5px;
+            font-size: 14px;
             color: #334155;
-            line-height: 1.7;
-            text-align: justify;
+            line-height: 1.6;
             border-top: 1px solid #e2e8f0;
             border-right: 1px solid #e2e8f0;
             border-bottom: 1px solid #e2e8f0;
         }
+
+        .intro-content {
+            overflow: hidden;
+            display: -webkit-box;
+            line-clamp: 1;
+            -webkit-line-clamp: 1;
+            -webkit-box-orient: vertical;
+            transition: all 0.3s ease;
+        }
+
+        .intro-content.expanded {
+            display: block;
+        }
+
+        .btn-toggle-intro {
+            background: none;
+            border: none;
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+            padding: 4px 0 0 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-family: inherit;
+        }
+        .btn-toggle-intro:hover { text-decoration: underline; color: var(--primary-dark); }
 
         .filter-section {
             background: var(--card-bg);
@@ -161,6 +188,7 @@
         .horizontal-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         .horizontal-scroll::-webkit-scrollbar-thumb:hover { background: var(--primary); }
 
+        /* Fix chuẩn CSS cho Card h3 (Khắc phục cảnh báo Problems VS Code) */
         .card {
             flex: 0 0 235px;
             background: var(--card-bg);
@@ -207,6 +235,7 @@
             height: 39px; 
             overflow: hidden; 
             display: -webkit-box; 
+            line-clamp: 2;
             -webkit-line-clamp: 2; 
             -webkit-box-orient: vertical; 
             color: var(--text-main);
@@ -235,7 +264,7 @@
             .scroll-btn { display: none; }
             header h1 { font-size: 22px; }
             .container { padding: 0 12px; }
-            .intro-banner { font-size: 13.5px; padding: 15px; }
+            .intro-banner { font-size: 13px; padding: 12px 15px; }
         }
     </style>
 </head>
@@ -243,7 +272,7 @@
 
     <header>
         <h1>SẢN PHẨM OCOP QUẢNG NGÃI</h1>
-        <p>Tra cứu 535 sản phẩm OCOP thuộc 96 Xã/Phường/Thị trấn</p>
+        <p>Tra cứu hơn 500 sản phẩm OCOP thuộc 96 Xã/Phường/Thị trấn</p>
         
         <div class="social-contact">
             <span>Liên hệ:</span>
@@ -259,9 +288,12 @@
     </header>
 
     <main class="container">
-        <!-- Khung giới thiệu OCOP Quảng Ngãi tăng độ nhận diện -->
+        <!-- Khung giới thiệu OCOP Quảng Ngãi (Thu gọn 1 hàng) -->
         <div class="intro-banner">
-            Chương trình "Mỗi xã một sản phẩm" (OCOP) là động lực phát triển kinh tế nông thôn bằng việc chuẩn hóa các sản phẩm đặc trưng mang đậm bản sắc văn hóa vùng miền; trong đó, Quảng Ngãi với tiềm năng phong phú từ đồng bằng ven sông Trà Khúc, khối núi Ngọc Linh hùng vĩ đến biển đảo Lý Sơn chính là vùng đất hội tụ nhiều sản phẩm đặc hữu trứ danh. Phát huy lợi thế này, kho tàng OCOP Quảng Ngãi với hàng trăm sản phẩm đạt chuẩn từ 3 đến 5 sao từ 96 xã, phường, thị trấn không chỉ là kết tinh tâm huyết và văn hóa địa phương mà còn là cầu nối uy tín đưa nông sản chất lượng cao vươn xa, góp phần thúc đẩy kinh tế tỉnh nhà phát triển bền vững.
+            <div class="intro-content" id="introText">
+                Chương trình "Mỗi xã một sản phẩm" (OCOP) là động lực phát triển kinh tế nông thôn bằng việc chuẩn hóa các sản phẩm đặc trưng mang đậm bản sắc văn hóa vùng miền; trong đó, Quảng Ngãi với tiềm năng phong phú từ đồng bằng ven sông Trà Khúc, khối núi Ngọc Linh hùng vĩ đến biển đảo Lý Sơn chính là vùng đất hội tụ nhiều sản phẩm đặc hữu trứ danh. Phát huy lợi thế này, kho tàng OCOP Quảng Ngãi với hàng trăm sản phẩm đạt chuẩn từ 3 đến 5 sao từ 96 xã, phường, thị trấn không chỉ là kết tinh tâm huyết và văn hóa địa phương mà còn là cầu nối uy tín đưa nông sản chất lượng cao vươn xa, góp phần thúc đẩy kinh tế tỉnh nhà phát triển bền vững.
+            </div>
+            <button class="btn-toggle-intro" id="btnToggleIntro" onclick="toggleIntro()">Xem thêm ▾</button>
         </div>
 
         <!-- Khung Tìm Kiếm & Bộ Lọc -->
@@ -297,7 +329,7 @@
         
                 <section class="category-section featured-section">
                     <div class="category-header">
-                        <h2>🔥 SẢN PHẨM NỔI BẬT</h2>
+                        <h2>🔥 SẢN PHẨM NỔI BẬT / QUÀ TẶNG</h2>
                         <span class="count-tag">3 sản phẩm</span>
                     </div>
                     <div class="scroll-container">
@@ -10634,6 +10666,19 @@
     </footer>
 
     <script>
+        // Xử lý bật / tắt mở rộng đoạn văn giới thiệu
+        function toggleIntro() {
+            const introText = document.getElementById('introText');
+            const btn = document.getElementById('btnToggleIntro');
+            if (introText.classList.contains('expanded')) {
+                introText.classList.remove('expanded');
+                btn.innerHTML = 'Xem thêm ▾';
+            } else {
+                introText.classList.add('expanded');
+                btn.innerHTML = 'Thu gọn ▴';
+            }
+        }
+
         function scrollSection(btn, distance) {
             const scrollContainer = btn.parentElement.querySelector('.horizontal-scroll');
             if (scrollContainer) {
