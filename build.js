@@ -9,6 +9,9 @@ const CSV_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/t
 const FACEBOOK_URL = "https://facebook.com/ocopquangngai.official"; 
 const TIKTOK_URL = "https://tiktok.com/@ocop.qung.ngi";            
 
+// GIỚI HẠN SỐ SẢN PHẨM HIỂN THỊ BAN ĐẦU TRÊN MỖI HÀNG CUỘN NGANG
+const MAX_DISPLAY_PER_CATEGORY = 24;
+
 function parseCSV(csvText) {
     const lines = csvText.trim().split('\n');
     if (lines.length < 2) return [];
@@ -81,6 +84,9 @@ async function buildWebsite() {
             const category = product.category || 'Khác';
             const producer = product.producer || (product.description && product.description.includes('Sản xuất bởi') ? product.description.split('Sản xuất bởi')[1].trim() : '');
             const isFeatured = (product.featured || '').toString().toLowerCase() === 'true' || (product.featured || '').toString() === '1';
+            
+            // Đọc thứ tự ưu tiên (sort_order), nếu không điền mặc định cho là 9999
+            const sortOrder = parseInt(product.sort_order || product.order || '9999', 10);
 
             districtsSet.add(district);
             if (producer) producersSet.add(producer);
@@ -98,6 +104,7 @@ async function buildWebsite() {
                 district,
                 category,
                 producer,
+                sortOrder: isNaN(sortOrder) ? 9999 : sortOrder,
                 fileName,
                 imageUrl
             };
@@ -121,9 +128,13 @@ async function buildWebsite() {
             fs.writeFileSync(path.join(distDir, fileName), htmlContent);
         });
 
-        function renderCard(p) {
+        // Hàm sắp xếp danh sách theo sortOrder tăng dần (1, 2, 3...)
+        const sortByOrder = (a, b) => a.sortOrder - b.sortOrder;
+
+        function renderCard(p, isHidden = false) {
             return `
-                <div class="card" 
+                <div class="card ${isHidden ? 'extra-card' : ''}" 
+                     style="${isHidden ? 'display: none;' : ''}"
                      data-title="${(p.title || '').toLowerCase()}" 
                      data-star="${p.star}" 
                      data-district="${p.district}" 
@@ -144,14 +155,20 @@ async function buildWebsite() {
             `;
         }
 
+        // Sắp xếp Sản phẩm nổi bật theo thứ tự sort_order
+        featuredProducts.sort(sortByOrder);
+
         let featuredSectionHtml = '';
         if (featuredProducts.length > 0) {
-            const featuredCards = featuredProducts.map(p => renderCard(p)).join('');
+            const featuredCards = featuredProducts.map((p, idx) => renderCard(p, idx >= MAX_DISPLAY_PER_CATEGORY)).join('');
             featuredSectionHtml = `
-                <section class="category-section featured-section">
+                <section class="category-section featured-section" id="cat-featured">
                     <div class="category-header">
                         <h2>🔥 SẢN PHẨM NỔI BẬT / QUÀ TẶNG</h2>
-                        <span class="count-tag">${featuredProducts.length} sản phẩm</span>
+                        <div class="header-actions">
+                            <span class="count-tag">${featuredProducts.length} sản phẩm</span>
+                            ${featuredProducts.length > MAX_DISPLAY_PER_CATEGORY ? `<button class="btn-expand-cat" onclick="expandCategory('cat-featured', this)">Xem tất cả (${featuredProducts.length}) ➔</button>` : ''}
+                        </div>
                     </div>
                     <div class="scroll-container">
                         <button class="scroll-btn left" onclick="scrollSection(this, -300)">❮</button>
@@ -165,13 +182,25 @@ async function buildWebsite() {
         }
 
         let categorySectionsHtml = '';
+        let catIndex = 0;
         for (const [catName, catProducts] of Object.entries(categoriesMap)) {
-            const cardsHtml = catProducts.map(p => renderCard(p)).join('');
+            catIndex++;
+            const catId = `cat-sec-${catIndex}`;
+            
+            // Sắp xếp danh sách sản phẩm trong chuyên mục theo thứ tự
+            catProducts.sort(sortByOrder);
+
+            const cardsHtml = catProducts.map((p, idx) => renderCard(p, idx >= MAX_DISPLAY_PER_CATEGORY)).join('');
+            const hasMore = catProducts.length > MAX_DISPLAY_PER_CATEGORY;
+
             categorySectionsHtml += `
-                <section class="category-section">
+                <section class="category-section" id="${catId}">
                     <div class="category-header">
                         <h2>📦 CHUYÊN MỤC: ${catName.toUpperCase()}</h2>
-                        <span class="count-tag">${catProducts.length} sản phẩm</span>
+                        <div class="header-actions">
+                            <span class="count-tag">${catProducts.length} sản phẩm</span>
+                            ${hasMore ? `<button class="btn-expand-cat" onclick="expandCategory('${catId}', this)">Xem tất cả (${catProducts.length}) ➔</button>` : ''}
+                        </div>
                     </div>
                     <div class="scroll-container">
                         <button class="scroll-btn left" onclick="scrollSection(this, -300)">❮</button>
@@ -249,7 +278,6 @@ async function buildWebsite() {
 
         .container { max-width: 1280px; margin: 25px auto; padding: 0 20px; }
         
-        /* Khung Giới Thiệu OCOP Quảng Ngãi Thu Gọn 1 Dòng */
         .intro-banner {
             background: var(--card-bg);
             border-left: 5px solid var(--primary);
@@ -274,9 +302,7 @@ async function buildWebsite() {
             transition: all 0.3s ease;
         }
 
-        .intro-content.expanded {
-            display: block;
-        }
+        .intro-content.expanded { display: block; }
 
         .btn-toggle-intro {
             background: none;
@@ -336,12 +362,28 @@ async function buildWebsite() {
             border: 1.5px solid #fde68a; 
             box-shadow: 0 4px 15px rgba(245, 158, 11, 0.08);
         }
-        .category-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 2px solid #f1f5f9; }
+        .category-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 2px solid #f1f5f9; }
         .featured-section .category-header { border-bottom-color: #fde68a; }
         .category-header h2 { margin: 0; font-size: 19px; font-weight: 700; color: var(--primary-dark); }
         .featured-section .category-header h2 { color: #d97706; }
+        
+        .header-actions { display: flex; align-items: center; gap: 10px; }
         .count-tag { background: var(--primary-light); color: var(--primary-dark); padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; }
         .featured-section .count-tag { background: #fef3c7; color: #b45309; }
+
+        .btn-expand-cat {
+            background: white;
+            border: 1px solid var(--primary);
+            color: var(--primary-dark);
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+        .btn-expand-cat:hover { background: var(--primary); color: white; }
 
         .scroll-container { position: relative; display: flex; align-items: center; }
         .scroll-btn {
@@ -381,7 +423,6 @@ async function buildWebsite() {
         .horizontal-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         .horizontal-scroll::-webkit-scrollbar-thumb:hover { background: var(--primary); }
 
-        /* Fix chuẩn CSS cho Card h3 (Khắc phục cảnh báo Problems VS Code) */
         .card {
             flex: 0 0 235px;
             background: var(--card-bg);
@@ -539,7 +580,6 @@ async function buildWebsite() {
     </footer>
 
     <script>
-        // Xử lý bật / tắt mở rộng đoạn văn giới thiệu
         function toggleIntro() {
             const introText = document.getElementById('introText');
             const btn = document.getElementById('btnToggleIntro');
@@ -549,6 +589,26 @@ async function buildWebsite() {
             } else {
                 introText.classList.add('expanded');
                 btn.innerHTML = 'Thu gọn ▴';
+            }
+        }
+
+        function expandCategory(sectionId, btn) {
+            const section = document.getElementById(sectionId);
+            if (!section) return;
+            const extraCards = section.querySelectorAll('.extra-card');
+            const isExpanded = btn.getAttribute('data-expanded') === 'true';
+
+            if (isExpanded) {
+                extraCards.forEach(c => c.style.display = 'none');
+                btn.setAttribute('data-expanded', 'false');
+                btn.innerText = btn.getAttribute('data-original-text');
+            } else {
+                if (!btn.getAttribute('data-original-text')) {
+                    btn.setAttribute('data-original-text', btn.innerText);
+                }
+                extraCards.forEach(c => c.style.display = 'flex');
+                btn.setAttribute('data-expanded', 'true');
+                btn.innerText = 'Thu gọn ▴';
             }
         }
 
@@ -606,7 +666,7 @@ async function buildWebsite() {
 </html>`;
 
         fs.writeFileSync(path.join(distDir, 'index.html'), indexHtml);
-        console.log(' 📄 Đã cập nhật xong toàn bộ giao diện, intro thu gọn & tiêu đề mới: dist/index.html');
+        console.log(' 📄 Đã cập nhật tính năng sắp xếp thứ tự ưu tiên (sort_order): dist/index.html');
         console.log('🎉 Hoàn thành xuất sắc!');
 
     } catch (error) {
