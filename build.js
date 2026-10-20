@@ -85,7 +85,6 @@ async function buildWebsite() {
             const producer = product.producer || (product.description && product.description.includes('Sản xuất bởi') ? product.description.split('Sản xuất bởi')[1].trim() : '');
             const isFeatured = (product.featured || '').toString().toLowerCase() === 'true' || (product.featured || '').toString() === '1';
             
-            // Đọc thứ tự ưu tiên (sort_order), nếu không điền mặc định cho là 9999
             const sortOrder = parseInt(product.sort_order || product.order || '9999', 10);
 
             districtsSet.add(district);
@@ -96,7 +95,9 @@ async function buildWebsite() {
             }
 
             const fileName = `${product.slug || 'san-pham-' + product.id}.html`;
-            const imageUrl = product.image_url || 'https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=500';
+            
+            // XỬ LÝ VẤN ĐỀ 1: Kiểm tra xem cột image_url có dữ liệu hay không
+            const rawImageUrl = (product.image_url || '').trim();
 
             const productData = {
                 ...product,
@@ -106,7 +107,7 @@ async function buildWebsite() {
                 producer,
                 sortOrder: isNaN(sortOrder) ? 9999 : sortOrder,
                 fileName,
-                imageUrl
+                imageUrl: rawImageUrl
             };
 
             categoriesMap[category].push(productData);
@@ -115,23 +116,38 @@ async function buildWebsite() {
                 featuredProducts.push(productData);
             }
 
+            // Tạo mã HTML hiển thị ảnh ở trang chi tiết (nếu không có link sẽ để trống)
+            let detailImageHtml = '';
+            if (rawImageUrl !== '') {
+                detailImageHtml = `
+                    <div class="detail-img-container">
+                        <img src="${rawImageUrl}" alt="${product.title || ''}" loading="lazy">
+                    </div>
+                `;
+            }
+
+            // Xuất trang HTML chi tiết từng sản phẩm
             let htmlContent = templateHtml
                 .replaceAll('{{TITLE}}', product.title || '')
                 .replaceAll('{{DESCRIPTION}}', product.description || '')
                 .replaceAll('{{STAR}}', star)
                 .replaceAll('{{DISTRICT}}', district)
                 .replaceAll('{{CATEGORY}}', category)
-                .replaceAll('{{IMAGE_URL}}', imageUrl)
+                .replaceAll('{{IMAGE_HTML}}', detailImageHtml)
                 .replaceAll('{{CONTENT}}', product.content || '')
                 .replaceAll('{{AFFILIATE_LINK}}', product.affiliate_link || '#');
 
             fs.writeFileSync(path.join(distDir, fileName), htmlContent);
         });
 
-        // Hàm sắp xếp danh sách theo sortOrder tăng dần (1, 2, 3...)
         const sortByOrder = (a, b) => a.sortOrder - b.sortOrder;
 
+        // Hàm tạo card sản phẩm ở trang chủ (Nếu không có link ảnh ➔ không xuất thẻ <img>)
         function renderCard(p, isHidden = false) {
+            const imgHtml = p.imageUrl !== '' 
+                ? `<div class="img-wrapper"><img src="${p.imageUrl}" alt="${p.title || ''}" loading="lazy"></div>` 
+                : '';
+
             return `
                 <div class="card ${isHidden ? 'extra-card' : ''}" 
                      style="${isHidden ? 'display: none;' : ''}"
@@ -142,9 +158,7 @@ async function buildWebsite() {
                      data-category="${p.category}"
                      data-producer-lower="${(p.producer || '').toLowerCase()}">
                     <span class="badge star-${p.star}">⭐ OCOP ${p.star} SAO</span>
-                    <div class="img-wrapper">
-                        <img src="${p.imageUrl}" alt="${p.title || ''}" loading="lazy">
-                    </div>
+                    ${imgHtml}
                     <div class="card-body">
                         <h3>${p.title || ''}</h3>
                         <p class="meta">📍 ${p.district} • 🏷️ ${p.category}</p>
@@ -155,7 +169,6 @@ async function buildWebsite() {
             `;
         }
 
-        // Sắp xếp Sản phẩm nổi bật theo thứ tự sort_order
         featuredProducts.sort(sortByOrder);
 
         let featuredSectionHtml = '';
@@ -187,7 +200,6 @@ async function buildWebsite() {
             catIndex++;
             const catId = `cat-sec-${catIndex}`;
             
-            // Sắp xếp danh sách sản phẩm trong chuyên mục theo thứ tự
             catProducts.sort(sortByOrder);
 
             const cardsHtml = catProducts.map((p, idx) => renderCard(p, idx >= MAX_DISPLAY_PER_CATEGORY)).join('');
@@ -666,7 +678,7 @@ async function buildWebsite() {
 </html>`;
 
         fs.writeFileSync(path.join(distDir, 'index.html'), indexHtml);
-        console.log(' 📄 Đã cập nhật tính năng sắp xếp thứ tự ưu tiên (sort_order): dist/index.html');
+        console.log(' 📄 Đã hoàn tất xử lý ẩn ảnh trống & thêm xác nhận mua hàng!');
         console.log('🎉 Hoàn thành xuất sắc!');
 
     } catch (error) {
