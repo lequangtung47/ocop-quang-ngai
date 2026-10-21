@@ -11,21 +11,65 @@ const TIKTOK_URL = "https://tiktok.com/@ocop.qung.ngi";
 
 const MAX_DISPLAY_PER_CATEGORY = 24;
 
+// Hàm đọc CSV thông minh: Xử lý triệt để việc xuống dòng (Ctrl + Enter) bên trong 1 ô của Google Sheets
 function parseCSV(csvText) {
-    const lines = csvText.trim().split('\n');
-    if (lines.length < 2) return [];
-
-    const headers = lines[0].split(',').map(h => h.replace(/^"|"$/g, '').trim());
+    const rows = [];
+    let row = [];
+    let inQuotes = false;
+    let currentValue = '';
+    
+    for (let i = 0; i < csvText.length; i++) {
+        let c = csvText[i];
+        let nextC = csvText[i+1];
+        
+        if (inQuotes) {
+            if (c === '"') {
+                if (nextC === '"') {
+                    currentValue += '"';
+                    i++;
+                } else {
+                    inQuotes = false;
+                }
+            } else {
+                currentValue += c;
+            }
+        } else {
+            if (c === '"') {
+                inQuotes = true;
+            } else if (c === ',') {
+                row.push(currentValue);
+                currentValue = '';
+            } else if (c === '\r') {
+                // Bỏ qua ký tự xuống dòng kiểu Windows
+            } else if (c === '\n') {
+                row.push(currentValue);
+                rows.push(row);
+                row = [];
+                currentValue = '';
+            } else {
+                currentValue += c;
+            }
+        }
+    }
+    if (currentValue || row.length > 0) {
+        row.push(currentValue);
+        rows.push(row);
+    }
+    
+    if (rows.length < 2) return [];
+    const headers = rows[0].map(h => h.replace(/^"|"$/g, '').trim());
     const result = [];
-
-    for (let i = 1; i < lines.length; i++) {
-        const currentLine = lines[i].match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || [];
-        const row = {};
+    
+    for (let i = 1; i < rows.length; i++) {
+        const rFields = rows[i];
+        if (rFields.length === 1 && rFields[0].trim() === '') continue;
+        const rowObj = {};
         headers.forEach((header, index) => {
-            let val = currentLine[index] ? currentLine[index].replace(/^"|"$/g, '').trim() : '';
-            row[header] = val;
+            let val = rFields[index] !== undefined ? rFields[index] : '';
+            val = val.replace(/^"|"$/g, '').trim();
+            rowObj[header] = val;
         });
-        result.push(row);
+        result.push(rowObj);
     }
     return result;
 }
@@ -341,7 +385,6 @@ async function buildWebsite() {
         }
         .btn-toggle-intro:hover { text-decoration: underline; color: var(--primary-dark); }
 
-        /* KHUNG TÌM KIẾM BỘ LỌC CHUẨN GỌN GÀNG */
         .filter-section {
             background: var(--card-bg);
             padding: 14px 18px;
@@ -591,7 +634,6 @@ async function buildWebsite() {
             <button class="btn-toggle-intro" id="btnToggleIntro" onclick="toggleIntro()">Xem thêm ▾</button>
         </div>
 
-        <!-- BỘ LỌC TÌM KIẾM CÓ NÚT THU GỌN / MỞ RỘNG -->
         <div class="filter-section">
             <div class="filter-basic">
                 <div class="filter-control">
@@ -743,7 +785,6 @@ async function buildWebsite() {
 </body>
 </html>`;
 
-        // Ghi trực tiếp ra cả hai nơi (gốc và dist) để tránh lỗi Vercel chỉ đọc file gốc
         fs.writeFileSync(path.join(distDir, 'index.html'), indexHtml);
         fs.writeFileSync(path.join(__dirname, 'index.html'), indexHtml);
 
@@ -757,7 +798,7 @@ async function buildWebsite() {
         const robotsTxt = `User-agent: *\nAllow: /\n\nSitemap: ${DOMAIN}/sitemap.xml`;
         fs.writeFileSync(path.join(distDir, 'robots.txt'), robotsTxt);
 
-        console.log(' 🗺️ Đã tạo xong sitemap.xml, robots.txt và giao diện thu gọn bộ lọc!');
+        console.log(' 🗺️ Đã phân tích đúng định dạng xuống dòng và hình ảnh từ Google Sheets!');
         console.log(' 📄 Đã build xong toàn bộ website hoàn hảo!');
 
     } catch (error) {
