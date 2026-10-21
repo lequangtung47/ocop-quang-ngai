@@ -75,7 +75,6 @@ async function buildWebsite() {
         const districtsSet = new Set();
         const producersSet = new Set();
 
-        // Mảng chứa các đường dẫn để tạo sitemap
         const sitemapUrls = [`${DOMAIN}/`];
 
         products.forEach(product => {
@@ -130,7 +129,7 @@ async function buildWebsite() {
 
             let htmlContent = templateHtml
                 .replaceAll('{{TITLE}}', product.title || '')
-                .replaceAll('{{DESCRIPTION}}', product.description || `Sản phẩm OCOP ${star} sao tại ${district}, Quảng Ngãi.`)
+                .replaceAll('{{DESCRIPTION}}', product.description || `Sản phẩm OCOP ${star} sao tại ${district}, Quảng Ngãi. Tra cứu/tìm mua sản phẩm OCOP Quảng Ngãi thuộc 96 xã phường đặc khu.`)
                 .replaceAll('{{STAR}}', star)
                 .replaceAll('{{DISTRICT}}', district)
                 .replaceAll('{{CATEGORY}}', category)
@@ -240,14 +239,14 @@ async function buildWebsite() {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sản Phẩm OCOP Quảng Ngãi - Thông Tin Tổng Hợp Đặc Sản Chính Gốc</title>
-    <meta name="description" content="Trang tin tổng hợp tra cứu thông tin hơn 500 sản phẩm OCOP Quảng Ngãi thuộc 96 xã phường thị trấn. Cập nhật liên hệ chính chủ, giá cả và nơi bán uy tín.">
+    <title>Sản Phẩm OCOP Quảng Ngãi - Đặc Sản Chính Gốc</title>
+    <meta name="description" content="Tra cứu/tìm mua sản phẩm OCOP Quảng Ngãi thuộc 96 xã phường đặc khu.">
     <meta name="keywords" content="OCOP Quảng Ngãi, đặc sản Quảng Ngãi, nông sản Quảng Ngãi, catalog OCOP, tỏi Lý Sơn, nấm linh chi">
     <meta name="robots" content="index, follow">
 
     <meta property="og:type" content="website">
-    <meta property="og:title" content="Trang Tin Tổng Hợp Sản Phẩm OCOP Quảng Ngãi">
-    <meta property="og:description" content="Tra cứu Catalog hơn 500 đặc sản OCOP Quảng Ngãi chính gốc. Kết nối mua hàng trực tiếp với cơ sở sản xuất.">
+    <meta property="og:title" content="Sản Phẩm OCOP Quảng Ngãi - Đặc Sản Chính Gốc">
+    <meta property="og:description" content="Tra cứu/tìm mua sản phẩm OCOP Quảng Ngãi thuộc 96 xã phường đặc khu.">
     <meta property="og:url" content="${DOMAIN}">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -527,7 +526,7 @@ async function buildWebsite() {
 
     <header>
         <h1>TRANG TIN SẢN PHẨM OCOP QUẢNG NGÃI</h1>
-        <p>Kênh thông tin tổng hợp & tra cứu sản phẩm OCOP thuộc 96 Xã/Phường/Thị trấn</p>
+        <p>Tra cứu/tìm mua sản phẩm OCOP Quảng Ngãi thuộc 96 xã phường đặc khu.</p>
         
         <div class="social-contact">
             <span>Liên hệ:</span>
@@ -685,7 +684,6 @@ async function buildWebsite() {
 
         fs.writeFileSync(path.join(distDir, 'index.html'), indexHtml);
 
-        // ================= TỰ ĐỘNG TẠO FILE SITEMAP.XML CHO GOOGLE =================
         let sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
         sitemapUrls.forEach(url => {
             sitemapXml += `  <url>\n    <loc>${url}</loc>\n    <changefreq>daily</changefreq>\n    <priority>${url === DOMAIN + '/' ? '1.0' : '0.8'}</priority>\n  </url>\n`;
@@ -693,12 +691,11 @@ async function buildWebsite() {
         sitemapXml += `</urlset>`;
         fs.writeFileSync(path.join(distDir, 'sitemap.xml'), sitemapXml);
 
-        // ================= TỰ ĐỘNG TẠO FILE ROBOTS.TXT =================
         const robotsTxt = `User-agent: *\nAllow: /\n\nSitemap: ${DOMAIN}/sitemap.xml`;
         fs.writeFileSync(path.join(distDir, 'robots.txt'), robotsTxt);
 
-        console.log(' 🗺️ Đã tạo tự động Sitemap.xml và Robots.txt chuẩn SEO!');
-        console.log(' 📄 Đã build xong toàn bộ giao diện hoàn hảo!');
+        console.log(' 🗺️ Đã cập nhật tiêu đề & mô tả chuẩn SEO mới!');
+        console.log(' 📄 Đã build xong toàn bộ giao diện!');
 
     } catch (error) {
         console.error('❌ Có lỗi xảy ra:', error.message);
