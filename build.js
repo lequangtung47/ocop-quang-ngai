@@ -306,7 +306,7 @@ async function buildWebsite() {
             padding: 14px 20px;
             border-radius: 12px;
             box-shadow: var(--shadow-sm);
-            margin-bottom: 25px;
+            margin-bottom: 20px;
             font-size: 14px;
             color: #334155;
             line-height: 1.6;
@@ -341,9 +341,10 @@ async function buildWebsite() {
         }
         .btn-toggle-intro:hover { text-decoration: underline; color: var(--primary-dark); }
 
+        /* KHUNG TÌM KIẾM BỘ LỌC CHUẨN GỌN GÀNG */
         .filter-section {
             background: var(--card-bg);
-            padding: 16px 20px;
+            padding: 14px 18px;
             border-radius: 12px;
             box-shadow: var(--shadow-sm);
             margin-bottom: 25px;
@@ -352,30 +353,33 @@ async function buildWebsite() {
         }
         
         .filter-basic {
-            display: grid;
-            grid-template-columns: 1fr auto;
+            display: flex;
             gap: 10px;
             align-items: center;
         }
 
+        .filter-basic .filter-control {
+            flex-grow: 1;
+        }
+
         .filter-advanced {
             display: none;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 12px;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px;
             margin-top: 12px;
             padding-top: 12px;
             border-top: 1px dashed #e2e8f0;
         }
 
-        .filter-advanced.expanded {
-            display: grid;
+        .filter-advanced.show-filter {
+            display: grid !important;
         }
 
         .btn-toggle-filter {
             background: #f1f5f9;
             border: 1px solid #cbd5e1;
             color: var(--primary-dark);
-            font-weight: 600;
+            font-weight: 700;
             font-size: 13px;
             padding: 10px 14px;
             border-radius: 10px;
@@ -383,6 +387,7 @@ async function buildWebsite() {
             white-space: nowrap;
             transition: all 0.2s ease;
             font-family: inherit;
+            height: 42px;
         }
         .btn-toggle-filter:hover {
             background: var(--primary-light);
@@ -390,11 +395,12 @@ async function buildWebsite() {
         }
 
         .filter-control input, .filter-control select {
-            padding: 11px 14px;
+            padding: 10px 14px;
             border: 1px solid #cbd5e1;
             border-radius: 10px;
             font-size: 13.5px;
             width: 100%;
+            height: 42px;
             background-color: #f8fafc;
             color: var(--text-main);
             transition: all 0.2s ease;
@@ -585,12 +591,13 @@ async function buildWebsite() {
             <button class="btn-toggle-intro" id="btnToggleIntro" onclick="toggleIntro()">Xem thêm ▾</button>
         </div>
 
+        <!-- BỘ LỌC TÌM KIẾM CÓ NÚT THU GỌN / MỞ RỘNG -->
         <div class="filter-section">
             <div class="filter-basic">
                 <div class="filter-control">
                     <input type="text" id="searchInput" placeholder="🔍 Tìm tên sản phẩm..." onkeyup="filterProducts()">
                 </div>
-                <button class="btn-toggle-filter" id="btnToggleFilter" onclick="toggleFilter()">Bộ lọc ▾</button>
+                <button type="button" class="btn-toggle-filter" id="btnToggleFilter" onclick="toggleFilterAction()">Bộ lọc ▾</button>
             </div>
 
             <div class="filter-advanced" id="filterAdvanced">
@@ -651,14 +658,14 @@ async function buildWebsite() {
             }
         }
 
-        function toggleFilter() {
+        function toggleFilterAction() {
             const filterAdv = document.getElementById('filterAdvanced');
             const btn = document.getElementById('btnToggleFilter');
-            if (filterAdv.classList.contains('expanded')) {
-                filterAdv.classList.remove('expanded');
+            if (filterAdv.classList.contains('show-filter')) {
+                filterAdv.classList.remove('show-filter');
                 btn.innerHTML = 'Bộ lọc ▾';
             } else {
-                filterAdv.classList.add('expanded');
+                filterAdv.classList.add('show-filter');
                 btn.innerHTML = 'Thu gọn ▴';
             }
         }
@@ -736,7 +743,9 @@ async function buildWebsite() {
 </body>
 </html>`;
 
+        // Ghi trực tiếp ra cả hai nơi (gốc và dist) để tránh lỗi Vercel chỉ đọc file gốc
         fs.writeFileSync(path.join(distDir, 'index.html'), indexHtml);
+        fs.writeFileSync(path.join(__dirname, 'index.html'), indexHtml);
 
         let sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
         sitemapUrls.forEach(url => {
