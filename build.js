@@ -5,7 +5,7 @@ const path = require('path');
 const SPREADSHEET_ID = '1qRORgbuVhvake0Ny3ek5dkKSxN0VKlTnBauiQOS5hzA';
 const CSV_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet=Products`;
 
-// LINK MẠNG XÃ HỘI CỦA BẠN
+const DOMAIN = 'https://ocopquangngai.com.vn';
 const FACEBOOK_URL = "https://facebook.com/ocopquangngai.official"; 
 const TIKTOK_URL = "https://tiktok.com/@ocop.qung.ngi";            
 
@@ -75,6 +75,9 @@ async function buildWebsite() {
         const districtsSet = new Set();
         const producersSet = new Set();
 
+        // Mảng chứa các đường dẫn để tạo sitemap
+        const sitemapUrls = [`${DOMAIN}/`];
+
         products.forEach(product => {
             if (product.status !== 'published') return;
 
@@ -95,6 +98,9 @@ async function buildWebsite() {
 
             const fileName = `${product.slug || 'san-pham-' + product.id}.html`;
             const rawImageUrl = (product.image_url || '').trim();
+            const absoluteImageUrl = rawImageUrl.startsWith('http') ? rawImageUrl : `${DOMAIN}/${rawImageUrl}`;
+
+            sitemapUrls.push(`${DOMAIN}/${fileName}`);
 
             const productData = {
                 ...product,
@@ -124,20 +130,21 @@ async function buildWebsite() {
 
             let htmlContent = templateHtml
                 .replaceAll('{{TITLE}}', product.title || '')
-                .replaceAll('{{DESCRIPTION}}', product.description || '')
+                .replaceAll('{{DESCRIPTION}}', product.description || `Sản phẩm OCOP ${star} sao tại ${district}, Quảng Ngãi.`)
                 .replaceAll('{{STAR}}', star)
                 .replaceAll('{{DISTRICT}}', district)
                 .replaceAll('{{CATEGORY}}', category)
                 .replaceAll('{{IMAGE_HTML}}', detailImageHtml)
                 .replaceAll('{{CONTENT}}', product.content || '')
-                .replaceAll('{{AFFILIATE_LINK}}', product.affiliate_link || '#');
+                .replaceAll('{{AFFILIATE_LINK}}', product.affiliate_link || '#')
+                .replaceAll('{{FILE_NAME}}', fileName)
+                .replaceAll('{{OG_IMAGE}}', rawImageUrl !== '' ? absoluteImageUrl : `${DOMAIN}/images/default-share.jpg`);
 
             fs.writeFileSync(path.join(distDir, fileName), htmlContent);
         });
 
         const sortByOrder = (a, b) => a.sortOrder - b.sortOrder;
 
-        // Hàm render card đã sửa lỗi bố cục: Hạng sao nằm độc lập ở header card, không bao giờ đè lên tên sản phẩm
         function renderCard(p, isHidden = false) {
             const imgHtml = p.imageUrl !== '' 
                 ? `<div class="img-wrapper"><img src="${p.imageUrl}" alt="${p.title || ''}" loading="lazy"></div>` 
@@ -196,7 +203,6 @@ async function buildWebsite() {
         for (const [catName, catProducts] of Object.entries(categoriesMap)) {
             catIndex++;
             const catId = `cat-sec-${catIndex}`;
-            
             catProducts.sort(sortByOrder);
 
             const cardsHtml = catProducts.map((p, idx) => renderCard(p, idx >= MAX_DISPLAY_PER_CATEGORY)).join('');
@@ -234,8 +240,16 @@ async function buildWebsite() {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sản Phẩm OCOP Quảng Ngãi - 535 Đặc Sản Chính Gốc</title>
-    <meta name="description" content="Danh mục tổng hợp hơn 500 sản phẩm OCOP Quảng Ngãi thuộc 96 xã phường thị trấn.">
+    <title>Sản Phẩm OCOP Quảng Ngãi - Thông Tin Tổng Hợp Đặc Sản Chính Gốc</title>
+    <meta name="description" content="Trang tin tổng hợp tra cứu thông tin hơn 500 sản phẩm OCOP Quảng Ngãi thuộc 96 xã phường thị trấn. Cập nhật liên hệ chính chủ, giá cả và nơi bán uy tín.">
+    <meta name="keywords" content="OCOP Quảng Ngãi, đặc sản Quảng Ngãi, nông sản Quảng Ngãi, catalog OCOP, tỏi Lý Sơn, nấm linh chi">
+    <meta name="robots" content="index, follow">
+
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Trang Tin Tổng Hợp Sản Phẩm OCOP Quảng Ngãi">
+    <meta property="og:description" content="Tra cứu Catalog hơn 500 đặc sản OCOP Quảng Ngãi chính gốc. Kết nối mua hàng trực tiếp với cơ sở sản xuất.">
+    <meta property="og:url" content="${DOMAIN}">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -432,7 +446,6 @@ async function buildWebsite() {
         .horizontal-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         .horizontal-scroll::-webkit-scrollbar-thumb:hover { background: var(--primary); }
 
-        /* Khắc phục hoàn toàn lỗi nhãn sao đè lên tiêu đề */
         .card {
             flex: 0 0 235px;
             background: var(--card-bg);
@@ -513,8 +526,8 @@ async function buildWebsite() {
 <body>
 
     <header>
-        <h1>SẢN PHẨM OCOP QUẢNG NGÃI</h1>
-        <p>Tra cứu hơn 500 sản phẩm OCOP thuộc 96 Xã/Phường/Thị trấn</p>
+        <h1>TRANG TIN SẢN PHẨM OCOP QUẢNG NGÃI</h1>
+        <p>Kênh thông tin tổng hợp & tra cứu sản phẩm OCOP thuộc 96 Xã/Phường/Thị trấn</p>
         
         <div class="social-contact">
             <span>Liên hệ:</span>
@@ -570,7 +583,7 @@ async function buildWebsite() {
     </main>
 
     <footer>
-        <p>&copy; 2026 - Catalog OCOP Quảng Ngãi</p>
+        <p>&copy; 2026 - Trang tin tổng hợp về sản phẩm OCOP Quảng Ngãi</p>
         <div class="social-contact" style="margin-top: 10px;">
             <span>Liên hệ:</span>
             <div class="social-icons">
@@ -671,8 +684,21 @@ async function buildWebsite() {
 </html>`;
 
         fs.writeFileSync(path.join(distDir, 'index.html'), indexHtml);
-        console.log(' 📄 Đã build xong toàn bộ giao diện hoàn hảo: dist/index.html');
-        console.log('🎉 Hoàn thành xuất sắc!');
+
+        // ================= TỰ ĐỘNG TẠO FILE SITEMAP.XML CHO GOOGLE =================
+        let sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
+        sitemapUrls.forEach(url => {
+            sitemapXml += `  <url>\n    <loc>${url}</loc>\n    <changefreq>daily</changefreq>\n    <priority>${url === DOMAIN + '/' ? '1.0' : '0.8'}</priority>\n  </url>\n`;
+        });
+        sitemapXml += `</urlset>`;
+        fs.writeFileSync(path.join(distDir, 'sitemap.xml'), sitemapXml);
+
+        // ================= TỰ ĐỘNG TẠO FILE ROBOTS.TXT =================
+        const robotsTxt = `User-agent: *\nAllow: /\n\nSitemap: ${DOMAIN}/sitemap.xml`;
+        fs.writeFileSync(path.join(distDir, 'robots.txt'), robotsTxt);
+
+        console.log(' 🗺️ Đã tạo tự động Sitemap.xml và Robots.txt chuẩn SEO!');
+        console.log(' 📄 Đã build xong toàn bộ giao diện hoàn hảo!');
 
     } catch (error) {
         console.error('❌ Có lỗi xảy ra:', error.message);
