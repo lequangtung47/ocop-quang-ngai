@@ -343,17 +343,53 @@ async function buildWebsite() {
 
         .filter-section {
             background: var(--card-bg);
-            padding: 20px;
-            border-radius: 16px;
-            box-shadow: var(--shadow-md);
-            margin-bottom: 30px;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 14px;
+            padding: 16px 20px;
+            border-radius: 12px;
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 25px;
             border: 1px solid #e2e8f0;
+            border-left: 5px solid var(--primary);
         }
-        .filter-control { position: relative; }
-        .filter-section input, .filter-section select {
+        
+        .filter-basic {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .filter-advanced {
+            display: none;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px dashed #e2e8f0;
+        }
+
+        .filter-advanced.expanded {
+            display: grid;
+        }
+
+        .btn-toggle-filter {
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            color: var(--primary-dark);
+            font-weight: 600;
+            font-size: 13px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+        .btn-toggle-filter:hover {
+            background: var(--primary-light);
+            border-color: var(--primary);
+        }
+
+        .filter-control input, .filter-control select {
             padding: 11px 14px;
             border: 1px solid #cbd5e1;
             border-radius: 10px;
@@ -364,7 +400,7 @@ async function buildWebsite() {
             transition: all 0.2s ease;
             font-family: inherit;
         }
-        .filter-section input:focus, .filter-section select:focus { 
+        .filter-control input:focus, .filter-control select:focus { 
             background-color: #fff;
             border-color: var(--primary); 
             outline: none; 
@@ -550,30 +586,36 @@ async function buildWebsite() {
         </div>
 
         <div class="filter-section">
-            <div class="filter-control">
-                <input type="text" id="searchInput" placeholder="🔍 Tìm tên sản phẩm..." onkeyup="filterProducts()">
+            <div class="filter-basic">
+                <div class="filter-control">
+                    <input type="text" id="searchInput" placeholder="🔍 Tìm tên sản phẩm..." onkeyup="filterProducts()">
+                </div>
+                <button class="btn-toggle-filter" id="btnToggleFilter" onclick="toggleFilter()">Bộ lọc ▾</button>
             </div>
-            <div class="filter-control">
-                <input type="text" id="producerInput" list="producerList" placeholder="🏢 Tìm Chủ cơ sở / HTX..." oninput="filterProducts()">
-                <datalist id="producerList">${producerDatalistOptions}</datalist>
-            </div>
-            <div class="filter-control">
-                <input type="text" id="districtInput" list="districtList" placeholder="📍 Tìm Xã / Phường..." oninput="filterProducts()">
-                <datalist id="districtList">${districtDatalistOptions}</datalist>
-            </div>
-            <div class="filter-control">
-                <select id="starFilter" onchange="filterProducts()">
-                    <option value="">⭐ Tất cả Hạng Sao</option>
-                    <option value="5">OCOP 5 Sao</option>
-                    <option value="4">OCOP 4 Sao</option>
-                    <option value="3">OCOP 3 Sao</option>
-                </select>
-            </div>
-            <div class="filter-control">
-                <select id="categoryFilter" onchange="filterProducts()">
-                    <option value="">🏷️ Tất cả Chuyên Mục</option>
-                    ${categoryOptions}
-                </select>
+
+            <div class="filter-advanced" id="filterAdvanced">
+                <div class="filter-control">
+                    <input type="text" id="producerInput" list="producerList" placeholder="🏢 Tìm Chủ cơ sở / HTX..." oninput="filterProducts()">
+                    <datalist id="producerList">${producerDatalistOptions}</datalist>
+                </div>
+                <div class="filter-control">
+                    <input type="text" id="districtInput" list="districtList" placeholder="📍 Tìm Xã / Phường..." oninput="filterProducts()">
+                    <datalist id="districtList">${districtDatalistOptions}</datalist>
+                </div>
+                <div class="filter-control">
+                    <select id="starFilter" onchange="filterProducts()">
+                        <option value="">⭐ Tất cả Hạng Sao</option>
+                        <option value="5">OCOP 5 Sao</option>
+                        <option value="4">OCOP 4 Sao</option>
+                        <option value="3">OCOP 3 Sao</option>
+                    </select>
+                </div>
+                <div class="filter-control">
+                    <select id="categoryFilter" onchange="filterProducts()">
+                        <option value="">🏷️ Tất cả Chuyên Mục</option>
+                        ${categoryOptions}
+                    </select>
+                </div>
             </div>
         </div>
 
@@ -605,6 +647,18 @@ async function buildWebsite() {
                 btn.innerHTML = 'Xem thêm ▾';
             } else {
                 introText.classList.add('expanded');
+                btn.innerHTML = 'Thu gọn ▴';
+            }
+        }
+
+        function toggleFilter() {
+            const filterAdv = document.getElementById('filterAdvanced');
+            const btn = document.getElementById('btnToggleFilter');
+            if (filterAdv.classList.contains('expanded')) {
+                filterAdv.classList.remove('expanded');
+                btn.innerHTML = 'Bộ lọc ▾';
+            } else {
+                filterAdv.classList.add('expanded');
                 btn.innerHTML = 'Thu gọn ▴';
             }
         }
@@ -694,8 +748,8 @@ async function buildWebsite() {
         const robotsTxt = `User-agent: *\nAllow: /\n\nSitemap: ${DOMAIN}/sitemap.xml`;
         fs.writeFileSync(path.join(distDir, 'robots.txt'), robotsTxt);
 
-        console.log(' 🗺️ Đã cập nhật tiêu đề & mô tả chuẩn SEO mới!');
-        console.log(' 📄 Đã build xong toàn bộ giao diện!');
+        console.log(' 🗺️ Đã tạo xong sitemap.xml, robots.txt và giao diện thu gọn bộ lọc!');
+        console.log(' 📄 Đã build xong toàn bộ website hoàn hảo!');
 
     } catch (error) {
         console.error('❌ Có lỗi xảy ra:', error.message);
