@@ -599,8 +599,8 @@ async function buildWebsite() {
 <body>
 
     <header>
-        <h1>TRANG TIN SẢN PHẨM OCOP QUẢNG NGÃI</h1>
-        <p>Tra cứu/tìm mua sản phẩm OCOP Quảng Ngãi thuộc 96 xã phường đặc khu.</p>
+        <h1>OCOP QUẢNG NGÃI</h1>
+        <p>Tra cứu và tìm mua sản phẩm OCOP Quảng Ngãi thuộc 96 xã phường đặc khu.</p>
         
         <div class="social-contact">
             <span>Liên hệ:</span>
