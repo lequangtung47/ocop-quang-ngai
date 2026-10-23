@@ -12,17 +12,7 @@ const TIKTOK_URL = "https://tiktok.com/@ocop.qung.ngi";
 
 const MAX_DISPLAY_PER_CATEGORY = 24;
 
-// 🎯 ĐẶT THỨ TỰ ƯU TIÊN HIỂN THỊ CÁC CHUYÊN MỤC TẠI ĐÂY (Mục nào nằm trên sẽ hiển thị trước)
-const CATEGORY_PRIORITY = [
-    'Tỏi Lý Sơn',
-    'Sâm Ngọc Linh',
-    'Quế Trà Bồng',
-    'Thực phẩm',
-    'Gia vị, Dầu ăn & Mật ong',
-    'Đồ uống',
-    'Khác'
-];
-
+// Hàm chuẩn hóa nhận diện tiêu đề cột chính xác tuyệt đối
 function normalizeHeader(h) {
     if (!h) return '';
     const norm = h.toString().toLowerCase().trim()
@@ -33,7 +23,7 @@ function normalizeHeader(h) {
     if (norm === 'slug' || norm.includes('duongdan')) return 'slug';
     if (norm === 'title' || norm === 'tensanpham' || norm === 'ten') return 'title';
     if (norm === 'star' || norm.includes('sao')) return 'star';
-    if (norm === 'district' || norm.includes('xa' ) || norm.includes('huyen') || norm.includes('khuvuc')) return 'district';
+    if (norm === 'district' || norm.includes('xa') || norm.includes('huyen') || norm.includes('khuvuc')) return 'district';
     if (norm === 'category' || norm.includes('chuyenmuc') || norm.includes('danhmuc')) return 'category';
     if (norm === 'description' || norm.includes('motangan') || norm.includes('mota')) return 'description';
     if (norm === 'content' || norm.includes('noidung')) return 'content';
@@ -250,22 +240,11 @@ async function buildWebsite() {
             `;
         }
 
-        // Sắp xếp các chuyên mục theo đúng mảng ưu tiên CATEGORY_PRIORITY ở trên
-        const sortedCategoryNames = Object.keys(categoriesMap).sort((a, b) => {
-            let idxA = CATEGORY_PRIORITY.indexOf(a);
-            let idxB = CATEGORY_PRIORITY.indexOf(b);
-            if (idxA === -1) idxA = 999; // Nếu chuyên mục mới tạo chưa có trong danh sách ưu tiên sẽ đẩy xuống dưới cùng
-            if (idxB === -1) idxB = 999;
-            if (idxA !== idxB) return idxA - idxB;
-            return a.localeCompare(b, 'vi'); // Nếu trùng độ ưu tiên thì sắp xếp theo bảng chữ cái tiếng Việt
-        });
-
         let categorySectionsHtml = '';
         let catIndex = 0;
-        for (const catName of sortedCategoryNames) {
+        for (const [catName, catProducts] of Object.entries(categoriesMap)) {
             catIndex++;
             const catId = `cat-sec-${catIndex}`;
-            const catProducts = categoriesMap[catName];
             catProducts.sort(sortByOrder);
 
             const cardsHtml = catProducts.map((p, idx) => renderCard(p, idx >= MAX_DISPLAY_PER_CATEGORY)).join('');
@@ -808,7 +787,7 @@ async function buildWebsite() {
         const robotsTxt = `User-agent: *\nAllow: /\n\nSitemap: ${DOMAIN}/sitemap.xml`;
         fs.writeFileSync(path.join(distDir, 'robots.txt'), robotsTxt);
 
-        console.log(' 🎯 Đã cập nhật thứ tự chuyên mục thành công!');
+        console.log(' 🔄 Đã khôi phục mã nguồn về trạng thái tự động hoàn toàn!');
 
     } catch (error) {
         console.error('❌ Có lỗi xảy ra:', error.message);
