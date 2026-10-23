@@ -594,8 +594,8 @@ async function buildWebsite() {
 <body>
 
     <header>
-        <h1>OCOP QUẢNG NGÃI</h1>
-        <p>Trang thông tin & tra cứu catalog đặc sản chính gốc Quảng Ngãi</p>
+        <h1>TRANG TIN SẢN PHẨM OCOP QUẢNG NGÃI</h1>
+        <p>Tra cứu/tìm mua sản phẩm OCOP Quảng Ngãi thuộc 96 xã phường đặc khu.</p>
         
         <div class="social-contact">
             <span>Liên hệ:</span>
@@ -613,7 +613,7 @@ async function buildWebsite() {
     <main class="container">
         <div class="intro-banner">
             <div class="intro-content" id="introText">
-                Chương trình "Mỗi xã một sản phẩm" (OCOP) giúp chuẩn hóa các nông sản, đặc sản đặc trưng vùng miền. Kho tàng OCOP Quảng Ngãi với hàng trăm sản phẩm 3–5 sao từ 96 xã phường chính là kết tinh tâm huyết và bản sắc địa phương.
+                Chương trình "Mỗi xã một sản phẩm" (OCOP) là động lực phát triển kinh tế nông thôn bằng việc chuẩn hóa các sản phẩm đặc trưng mang đậm bản sắc văn hóa vùng miền; trong đó, Quảng Ngãi với tiềm năng phong phú từ đồng bằng ven sông Trà Khúc, khối núi Ngọc Linh hùng vĩ đến biển đảo Lý Sơn chính là vùng đất hội tụ nhiều sản phẩm đặc hữu trứ danh. Phát huy lợi thế này, kho tàng OCOP Quảng Ngãi với hàng trăm sản phẩm đạt chuẩn từ 3 đến 5 sao từ 96 xã, phường, thị trấn không chỉ là kết tinh tâm huyết và văn hóa địa phương mà còn là cầu nối uy tín đưa nông sản chất lượng cao vươn xa, góp phần thúc đẩy kinh tế tỉnh nhà phát triển bền vững.
             </div>
             <button class="btn-toggle-intro" id="btnToggleIntro" onclick="toggleIntro()">Xem thêm ▾</button>
         </div>
@@ -657,7 +657,7 @@ async function buildWebsite() {
     </main>
 
     <footer>
-        <p>&copy; 2026 - Trang tin về sản phẩm OCOP Quảng Ngãi</p>
+        <p>&copy; 2026 - Trang tin tổng hợp về sản phẩm OCOP Quảng Ngãi</p>
         <div class="social-contact" style="margin-top: 8px;">
             <span>Liên hệ:</span>
             <div class="social-icons">
@@ -782,7 +782,7 @@ async function buildWebsite() {
         const robotsTxt = `User-agent: *\nAllow: /\n\nSitemap: ${DOMAIN}/sitemap.xml`;
         fs.writeFileSync(path.join(distDir, 'robots.txt'), robotsTxt);
 
-        console.log(' 🎨 Đã nâng cấp giao diện Mobile vô cùng hiện đại và sang trọng!');
+        console.log(' 🎨 Đã khôi phục đầy đủ đoạn giới thiệu ban đầu!');
 
     } catch (error) {
         console.error('❌ Có lỗi xảy ra:', error.message);
