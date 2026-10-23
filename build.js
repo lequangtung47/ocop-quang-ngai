@@ -12,17 +12,53 @@ const TIKTOK_URL = "https://tiktok.com/@ocop.qung.ngi";
 
 const MAX_DISPLAY_PER_CATEGORY = 24;
 
-// Hàm đọc CSV chuẩn tuyệt đối bằng thư viện csv-parse
+function normalizeHeader(h) {
+    if (!h) return '';
+    const norm = h.toString().toLowerCase().trim()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/[\s_-]+/g, '');
+    
+    if (norm.includes('status') || norm.includes('trangthai')) return 'status';
+    if (norm.includes('featured') || norm.includes('noibat') || norm.includes('uutien')) return 'featured';
+    if (norm.includes('image') || norm.includes('img') || norm.includes('hinhanh') || norm.includes('anh')) return 'image_url';
+    if (norm.includes('affiliate') || norm.includes('shopee') || norm.includes('link')) return 'affiliate_link';
+    if (norm.includes('star') || norm.includes('sao')) return 'star';
+    if (norm.includes('district') || norm.includes('xa') || norm.includes('huyen') || norm.includes('khuvuc')) return 'district';
+    if (norm.includes('category') || norm.includes('chuyenmuc') || norm.includes('danhmuc')) return 'category';
+    if (norm.includes('title') || norm.includes('tensanpham') || norm.includes('ten')) return 'title';
+    if (norm.includes('slug') || norm.includes('duongdan')) return 'slug';
+    if (norm.includes('sort') || norm.includes('order') || norm.includes('thutu')) return 'sort_order';
+    if (norm.includes('description') || norm.includes('motangan')) return 'description';
+    if (norm.includes('content') || norm.includes('noidung') || norm.includes('mota')) return 'content';
+    return norm;
+}
+
 function parseCSV(csvText) {
     try {
         const records = parse(csvText, {
-            columns: true,
+            columns: false,
             skip_empty_lines: true,
             trim: true,
             relax_quotes: true,
             relax_column_count: true
         });
-        return records;
+        
+        if (records.length < 2) return [];
+
+        const rawHeaders = records[0];
+        const headerMap = rawHeaders.map(h => normalizeHeader(h));
+        
+        const result = [];
+        for (let i = 1; i < records.length; i++) {
+            const row = records[i];
+            const obj = {};
+            headerMap.forEach((key, index) => {
+                let val = row[index] !== undefined ? row[index] : '';
+                obj[key] = val.toString().trim();
+            });
+            result.push(obj);
+        }
+        return result;
     } catch (err) {
         console.error('❌ Lỗi đọc CSV:', err.message);
         return [];
@@ -77,7 +113,7 @@ async function buildWebsite() {
         const sitemapUrls = [`${DOMAIN}/`];
 
         products.forEach(product => {
-            const status = (product.status || '').toString().trim().toLowerCase();
+            const status = (product.status || '').toLowerCase();
             if (status !== 'published') return;
 
             const star = product.star || '3';
@@ -85,10 +121,10 @@ async function buildWebsite() {
             const category = product.category || 'Khác';
             const producer = product.producer || (product.description && product.description.includes('Sản xuất bởi') ? product.description.split('Sản xuất bởi')[1].trim() : '');
             
-            const featuredRaw = (product.featured || '').toString().trim().toLowerCase();
-            const isFeatured = featuredRaw === 'true' || featuredRaw === '1' || featuredRaw === 'x';
+            const featuredRaw = (product.featured || '').toLowerCase();
+            const isFeatured = featuredRaw === 'true' || featuredRaw === '1' || featuredRaw === 'x' || featuredRaw === 'yes';
 
-            const sortOrder = parseInt(product.sort_order || product.order || '9999', 10);
+            const sortOrder = parseInt(product.sort_order || '9999', 10);
 
             districtsSet.add(district);
             if (producer) producersSet.add(producer);
@@ -97,7 +133,7 @@ async function buildWebsite() {
                 categoriesMap[category] = [];
             }
 
-            const fileName = `${product.slug || 'san-pham-' + product.id}.html`;
+            const fileName = `${product.slug || 'san-pham-' + Math.random()}.html`;
             const rawImageUrl = (product.image_url || '').trim();
             const absoluteImageUrl = rawImageUrl.startsWith('http') ? rawImageUrl : `${DOMAIN}/${rawImageUrl}`;
 
@@ -149,7 +185,7 @@ async function buildWebsite() {
         function renderCard(p, isHidden = false) {
             const imgHtml = p.imageUrl !== '' 
                 ? `<div class="img-wrapper"><img src="${p.imageUrl}" alt="${p.title || ''}" loading="lazy"></div>` 
-                : '';
+                : `<div class="img-wrapper no-img"><span>🌾 OCOP</span></div>`;
 
             return `
                 <div class="card ${isHidden ? 'extra-card' : ''}" 
@@ -161,12 +197,12 @@ async function buildWebsite() {
                      data-category="${p.category}"
                      data-producer-lower="${(p.producer || '').toLowerCase()}">
                     <div class="card-top-bar">
-                        <span class="badge star-${p.star}">⭐ OCOP ${p.star} SAO</span>
+                        <span class="badge star-${p.star}">⭐ ${p.star} SAO</span>
                     </div>
                     ${imgHtml}
                     <div class="card-body">
                         <h3>${p.title || ''}</h3>
-                        <p class="meta">📍 ${p.district} • 🏷️ ${p.category}</p>
+                        <p class="meta">📍 ${p.district}</p>
                         ${p.producer ? `<p class="producer-info">🏢 <em>${p.producer}</em></p>` : ''}
                     </div>
                     <a href="${p.fileName}" class="btn-detail">Xem chi tiết ➔</a>
@@ -182,11 +218,11 @@ async function buildWebsite() {
             featuredSectionHtml = `
                 <section class="category-section featured-section" id="cat-featured">
                     <div class="category-header">
-                        <h2>🔥 SẢN PHẨM NỔI BẬT / QUÀ TẶNG</h2>
-                        <div class="header-actions">
+                        <div class="cat-title-group">
+                            <h2>🔥 SẢN PHẨM NỔI BẬT</h2>
                             <span class="count-tag">${featuredProducts.length} sản phẩm</span>
-                            ${featuredProducts.length > MAX_DISPLAY_PER_CATEGORY ? `<button class="btn-expand-cat" onclick="expandCategory('cat-featured', this)">Xem tất cả (${featuredProducts.length}) ➔</button>` : ''}
                         </div>
+                        ${featuredProducts.length > MAX_DISPLAY_PER_CATEGORY ? `<button class="btn-expand-cat" onclick="expandCategory('cat-featured', this)">Xem tất cả (${featuredProducts.length}) ➔</button>` : ''}
                     </div>
                     <div class="scroll-container">
                         <button class="scroll-btn left" onclick="scrollSection(this, -300)">❮</button>
@@ -212,11 +248,11 @@ async function buildWebsite() {
             categorySectionsHtml += `
                 <section class="category-section" id="${catId}">
                     <div class="category-header">
-                        <h2>📦 CHUYÊN MỤC: ${catName.toUpperCase()}</h2>
-                        <div class="header-actions">
+                        <div class="cat-title-group">
+                            <h2>📦 ${catName.toUpperCase()}</h2>
                             <span class="count-tag">${catProducts.length} sản phẩm</span>
-                            ${hasMore ? `<button class="btn-expand-cat" onclick="expandCategory('${catId}', this)">Xem tất cả (${catProducts.length}) ➔</button>` : ''}
                         </div>
+                        ${hasMore ? `<button class="btn-expand-cat" onclick="expandCategory('${catId}', this)">Xem tất cả (${catProducts.length}) ➔</button>` : ''}
                     </div>
                     <div class="scroll-container">
                         <button class="scroll-btn left" onclick="scrollSection(this, -300)">❮</button>
@@ -233,88 +269,85 @@ async function buildWebsite() {
         let producerDatalistOptions = Array.from(producersSet).sort().map(p => `<option value="${p}">`).join('');
         let categoryOptions = Object.keys(categoriesMap).map(c => `<option value="${c}">${c}</option>`).join('');
 
-        const fbSvg = `<svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>`;
-        const ttSvg = `<svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.82.57-1.33 1.55-1.34 2.55-.02.83.34 1.66.97 2.18.72.61 1.72.84 2.62.63.92-.2 1.74-.83 2.12-1.69.29-.62.43-1.32.42-2.02.02-5.18.01-10.37.01-15.55z"/></svg>`;
+        const fbSvg = `<svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>`;
+        const ttSvg = `<svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.82.57-1.33 1.55-1.34 2.55-.02.83.34 1.66.97 2.18.72.61 1.72.84 2.62.63.92-.2 1.74-.83 2.12-1.69.29-.62.43-1.32.42-2.02.02-5.18.01-10.37.01-15.55z"/></svg>`;
 
         const indexHtml = `<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sản Phẩm OCOP Quảng Ngãi - Đặc Sản Chính Gốc</title>
-    <meta name="description" content="Tra cứu/tìm mua sản phẩm OCOP Quảng Ngãi thuộc 96 xã phường đặc khu.">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sản Phẩm OCOP Quảng Ngãi - Catalog Đặc Sản Chính Gốc</title>
+    <meta name="description" content="Tra cứu và tìm mua sản phẩm OCOP Quảng Ngãi đạt chuẩn 3-5 sao thuộc 96 xã phường.">
     <meta name="keywords" content="OCOP Quảng Ngãi, đặc sản Quảng Ngãi, nông sản Quảng Ngãi, catalog OCOP, tỏi Lý Sơn, nấm linh chi">
     <meta name="robots" content="index, follow">
 
     <meta property="og:type" content="website">
-    <meta property="og:title" content="Sản Phẩm OCOP Quảng Ngãi - Đặc Sản Chính Gốc">
-    <meta property="og:description" content="Tra cứu/tìm mua sản phẩm OCOP Quảng Ngãi thuộc 96 xã phường đặc khu.">
+    <meta property="og:title" content="Sản Phẩm OCOP Quảng Ngãi - Catalog Đặc Sản Chính Gốc">
+    <meta property="og:description" content="Tra cứu và tìm mua sản phẩm OCOP Quảng Ngãi đạt chuẩn 3-5 sao.">
     <meta property="og:url" content="${DOMAIN}">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
     <style>
         :root {
             --primary: #059669;
             --primary-dark: #047857;
-            --primary-light: #ecfdf5;
+            --primary-gradient: linear-gradient(135deg, #059669 0%, #0284c7 100%);
             --accent: #f59e0b;
-            --bg-body: #f8fafc;
-            --text-main: #1e293b;
+            --bg-body: #f1f5f9;
+            --text-main: #0f172a;
             --text-muted: #64748b;
             --card-bg: #ffffff;
-            --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
-            --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
-            --shadow-lg: 0 10px 25px rgba(0,0,0,0.1);
+            --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.04);
+            --shadow-md: 0 8px 20px rgba(15, 23, 42, 0.08);
+            --shadow-lg: 0 12px 30px rgba(15, 23, 42, 0.12);
         }
 
-        * { box-sizing: border-box; }
-        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; margin: 0; padding: 0; background-color: var(--bg-body); color: var(--text-main); line-height: 1.6; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif; margin: 0; padding: 0; background-color: var(--bg-body); color: var(--text-main); line-height: 1.5; }
         
         header { 
-            background: linear-gradient(135deg, #047857 0%, #10b981 100%); 
+            background: var(--primary-gradient); 
             color: white; 
-            padding: 40px 20px 30px 20px; 
+            padding: 24px 16px 20px 16px; 
             text-align: center; 
-            box-shadow: 0 4px 20px rgba(4, 120, 87, 0.25);
+            border-radius: 0 0 24px 24px;
+            box-shadow: 0 10px 25px rgba(5, 150, 105, 0.2);
         }
-        header h1 { margin: 0 0 8px 0; font-size: 28px; font-weight: 800; letter-spacing: -0.5px; }
-        header p { margin: 0 0 15px 0; font-size: 14.5px; opacity: 0.92; font-weight: 400; }
+        header h1 { margin: 0 0 6px 0; font-size: 22px; font-weight: 800; letter-spacing: -0.3px; text-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        header p { margin: 0 0 14px 0; font-size: 13px; opacity: 0.95; font-weight: 500; max-width: 600px; margin-left: auto; margin-right: auto; }
 
-        .social-contact { display: inline-flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.15); backdrop-filter: blur(8px); padding: 5px 16px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.25); }
-        .social-contact span { font-size: 12.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #fff; }
-        .social-icons { display: inline-flex; gap: 8px; }
+        .social-contact { display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.18); backdrop-filter: blur(10px); padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.3); }
+        .social-contact span { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #fff; }
+        .social-icons { display: inline-flex; gap: 6px; }
         .social-icon-btn {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 32px;
-            height: 32px;
+            width: 28px;
+            height: 28px;
             border-radius: 50%;
             text-decoration: none;
-            transition: all 0.25s ease;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: transform 0.2s ease;
         }
-        .social-icon-btn:hover { transform: translateY(-2px) scale(1.08); }
+        .social-icon-btn:active { transform: scale(0.9); }
         .icon-fb { background-color: #1877f2; }
         .icon-tt { background-color: #000000; }
 
-        .container { max-width: 1280px; margin: 25px auto; padding: 0 20px; }
+        .container { max-width: 1280px; margin: 16px auto; padding: 0 12px; }
         
         .intro-banner {
             background: var(--card-bg);
-            border-left: 5px solid var(--primary);
-            padding: 14px 20px;
-            border-radius: 12px;
+            padding: 12px 16px;
+            border-radius: 16px;
             box-shadow: var(--shadow-sm);
-            margin-bottom: 20px;
-            font-size: 14px;
+            margin-bottom: 14px;
+            font-size: 13px;
             color: #334155;
-            line-height: 1.6;
-            border-top: 1px solid #e2e8f0;
-            border-right: 1px solid #e2e8f0;
-            border-bottom: 1px solid #e2e8f0;
+            border: 1px solid #e2e8f0;
         }
 
         .intro-content {
@@ -333,29 +366,26 @@ async function buildWebsite() {
             border: none;
             color: var(--primary);
             font-weight: 700;
-            font-size: 13px;
+            font-size: 12px;
             cursor: pointer;
             padding: 4px 0 0 0;
             display: inline-flex;
             align-items: center;
-            gap: 4px;
             font-family: inherit;
         }
-        .btn-toggle-intro:hover { text-decoration: underline; color: var(--primary-dark); }
 
         .filter-section {
             background: var(--card-bg);
-            padding: 14px 18px;
-            border-radius: 12px;
+            padding: 12px;
+            border-radius: 16px;
             box-shadow: var(--shadow-sm);
-            margin-bottom: 25px;
+            margin-bottom: 20px;
             border: 1px solid #e2e8f0;
-            border-left: 5px solid var(--primary);
         }
         
         .filter-basic {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             align-items: center;
         }
 
@@ -365,10 +395,10 @@ async function buildWebsite() {
 
         .filter-advanced {
             display: none;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 10px;
-            margin-top: 12px;
-            padding-top: 12px;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 8px;
+            margin-top: 10px;
+            padding-top: 10px;
             border-top: 1px dashed #e2e8f0;
         }
 
@@ -382,154 +412,143 @@ async function buildWebsite() {
             color: var(--primary-dark);
             font-weight: 700;
             font-size: 13px;
-            padding: 10px 14px;
-            border-radius: 10px;
+            padding: 0 14px;
+            border-radius: 12px;
             cursor: pointer;
             white-space: nowrap;
-            transition: all 0.2s ease;
             font-family: inherit;
             height: 42px;
-        }
-        .btn-toggle-filter:hover {
-            background: var(--primary-light);
-            border-color: var(--primary);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .filter-control input, .filter-control select {
-            padding: 10px 14px;
+            padding: 0 14px;
             border: 1px solid #cbd5e1;
-            border-radius: 10px;
-            font-size: 13.5px;
+            border-radius: 12px;
+            font-size: 13px;
             width: 100%;
             height: 42px;
             background-color: #f8fafc;
             color: var(--text-main);
-            transition: all 0.2s ease;
             font-family: inherit;
+            outline: none;
         }
         .filter-control input:focus, .filter-control select:focus { 
             background-color: #fff;
             border-color: var(--primary); 
-            outline: none; 
-            box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.15); 
+            box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.12); 
         }
 
         .category-section { 
-            margin-bottom: 35px; 
+            margin-bottom: 24px; 
             background: var(--card-bg); 
-            padding: 24px; 
-            border-radius: 16px; 
+            padding: 16px; 
+            border-radius: 20px; 
             box-shadow: var(--shadow-sm); 
             border: 1px solid #e2e8f0; 
         }
         .featured-section { 
-            background: #fffbeb; 
-            border: 1.5px solid #fde68a; 
-            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.08);
+            background: linear-gradient(180deg, #fffbeb 0%, #ffffff 100%); 
+            border: 1px solid #fde68a; 
         }
-        .category-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 2px solid #f1f5f9; }
-        .featured-section .category-header { border-bottom-color: #fde68a; }
-        .category-header h2 { margin: 0; font-size: 19px; font-weight: 700; color: var(--primary-dark); }
-        .featured-section .category-header h2 { color: #d97706; }
+        .category-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1.5px solid #f1f5f9; }
+        .featured-section .category-header { border-bottom-color: #fef3c7; }
         
-        .header-actions { display: flex; align-items: center; gap: 10px; }
-        .count-tag { background: var(--primary-light); color: var(--primary-dark); padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+        .cat-title-group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .category-header h2 { margin: 0; font-size: 16px; font-weight: 800; color: var(--text-main); letter-spacing: -0.2px; }
+        .featured-section .category-header h2 { color: #b45309; }
+        
+        .count-tag { background: #f1f5f9; color: var(--text-muted); padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; }
         .featured-section .count-tag { background: #fef3c7; color: #b45309; }
 
         .btn-expand-cat {
-            background: white;
-            border: 1px solid var(--primary);
-            color: var(--primary-dark);
-            padding: 4px 12px;
-            border-radius: 16px;
-            font-size: 12px;
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            color: var(--text-main);
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11.5px;
             font-weight: 700;
             cursor: pointer;
-            transition: all 0.2s ease;
             font-family: inherit;
+            white-space: nowrap;
         }
-        .btn-expand-cat:hover { background: var(--primary); color: white; }
 
         .scroll-container { position: relative; display: flex; align-items: center; }
         .scroll-btn {
             position: absolute;
             top: 50%;
             transform: translateY(-50%);
-            width: 38px;
-            height: 38px;
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
             background: white;
-            border: 1px solid #cbd5e1;
+            border: 1px solid #e2e8f0;
             box-shadow: var(--shadow-md);
             cursor: pointer;
             z-index: 10;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 16px;
+            font-size: 14px;
             color: var(--text-main);
-            transition: all 0.2s ease;
         }
-        .scroll-btn:hover { background: var(--primary); color: white; border-color: var(--primary); }
-        .scroll-btn.left { left: -18px; }
-        .scroll-btn.right { right: -18px; }
+        .scroll-btn.left { left: -14px; }
+        .scroll-btn.right { right: -14px; }
 
         .horizontal-scroll {
             display: flex;
-            gap: 18px;
+            gap: 14px;
             overflow-x: auto;
-            padding: 6px 4px 16px 4px;
+            padding: 4px 2px 12px 2px;
             scroll-behavior: smooth;
             width: 100%;
             -webkit-overflow-scrolling: touch;
         }
-        .horizontal-scroll::-webkit-scrollbar { height: 6px; }
-        .horizontal-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 10px; }
-        .horizontal-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        .horizontal-scroll::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+        .horizontal-scroll::-webkit-scrollbar { display: none; }
 
         .card {
-            flex: 0 0 235px;
+            flex: 0 0 175px;
             background: var(--card-bg);
-            border-radius: 12px;
+            border-radius: 16px;
             border: 1px solid #e2e8f0;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
             position: relative;
             box-sizing: border-box;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: var(--shadow-sm);
             overflow: hidden;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
-        .card:hover { 
-            transform: translateY(-5px); 
-            box-shadow: var(--shadow-lg); 
-            border-color: #cbd5e1;
-        }
+        .card:active { transform: scale(0.98); }
         
-        .card-top-bar { padding: 10px 12px 0 12px; }
+        .card-top-bar { position: absolute; top: 8px; left: 8px; z-index: 2; }
         .badge { 
             display: inline-block;
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); 
-            color: white; 
-            padding: 4px 9px; 
-            border-radius: 6px; 
-            font-size: 10.5px; 
-            font-weight: 700; 
-            box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+            background: rgba(15, 23, 42, 0.75); 
+            backdrop-filter: blur(6px);
+            color: #fbbf24; 
+            padding: 3px 8px; 
+            border-radius: 8px; 
+            font-size: 10px; 
+            font-weight: 800; 
+            border: 0.5px solid rgba(255, 255, 255, 0.2);
         }
 
-        .img-wrapper { width: 100%; height: 145px; overflow: hidden; position: relative; background: #f1f5f9; margin-top: 8px; }
-        .card img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s ease; }
-        .card:hover img { transform: scale(1.06); }
+        .img-wrapper { width: 100%; height: 135px; overflow: hidden; position: relative; background: #f8fafc; }
+        .img-wrapper.no-img { display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 12px; font-weight: 600; }
+        .card img { width: 100%; height: 100%; object-fit: cover; }
 
-        .card-body { padding: 10px 14px 4px 14px; flex-grow: 1; }
+        .card-body { padding: 10px 10px 4px 10px; flex-grow: 1; }
         .card h3 { 
-            margin: 0 0 6px 0; 
-            font-size: 14.5px; 
-            font-weight: 600;
-            line-height: 1.35;
-            height: 39px; 
+            margin: 0 0 4px 0; 
+            font-size: 13.5px; 
+            font-weight: 700;
+            line-height: 1.3;
+            height: 35px; 
             overflow: hidden; 
             display: -webkit-box; 
             line-clamp: 2;
@@ -537,47 +556,54 @@ async function buildWebsite() {
             -webkit-box-orient: vertical; 
             color: var(--text-main);
         }
-        .card .meta { font-size: 11.5px; color: var(--text-muted); margin: 4px 0; font-weight: 500; }
-        .card .producer-info { font-size: 11.5px; color: var(--primary-dark); margin: 4px 0 8px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
+        .card .meta { font-size: 11px; color: var(--text-muted); margin: 2px 0; font-weight: 500; }
+        .card .producer-info { font-size: 10.5px; color: var(--primary-dark); margin: 2px 0 6px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
 
         .btn-detail { 
             display: block; 
             text-align: center; 
-            background: var(--primary-light); 
-            color: var(--primary-dark); 
-            padding: 9px 12px; 
+            background: var(--primary-gradient); 
+            color: white; 
+            padding: 8px 10px; 
             text-decoration: none; 
-            border-radius: 8px; 
+            border-radius: 10px; 
             font-weight: 700; 
-            font-size: 12.5px; 
-            margin: 10px 14px 14px 14px; 
-            transition: all 0.2s ease;
+            font-size: 11.5px; 
+            margin: 6px 10px 10px 10px; 
+            box-shadow: 0 2px 6px rgba(5, 150, 105, 0.2);
         }
-        .card:hover .btn-detail { background: var(--primary); color: white; }
 
-        footer { text-align: center; padding: 30px; color: var(--text-muted); font-size: 13.5px; margin-top: 40px; background: white; border-top: 1px solid #e2e8f0; }
+        footer { text-align: center; padding: 24px; color: var(--text-muted); font-size: 12px; margin-top: 30px; background: white; border-top: 1px solid #e2e8f0; }
 
-        @media (max-width: 768px) {
+        @media (min-width: 768px) {
+            header { padding: 36px 20px 28px 20px; border-radius: 0 0 32px 32px; }
+            header h1 { font-size: 28px; }
+            header p { font-size: 14.5px; }
+            .container { padding: 0 20px; margin: 24px auto; }
+            .card { flex: 0 0 220px; border-radius: 20px; }
+            .img-wrapper { height: 160px; }
+            .card h3 { font-size: 15px; height: 40px; }
+            .category-header h2 { font-size: 19px; }
+        }
+
+        @media (max-width: 767px) {
             .scroll-btn { display: none; }
-            header h1 { font-size: 22px; }
-            .container { padding: 0 12px; }
-            .intro-banner { font-size: 13px; padding: 12px 15px; }
         }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>TRANG TIN SẢN PHẨM OCOP QUẢNG NGÃI</h1>
-        <p>Tra cứu/tìm mua sản phẩm OCOP Quảng Ngãi thuộc 96 xã phường đặc khu.</p>
+        <h1>OCOP QUẢNG NGÃI</h1>
+        <p>Trang thông tin & tra cứu catalog đặc sản chính gốc Quảng Ngãi</p>
         
         <div class="social-contact">
             <span>Liên hệ:</span>
             <div class="social-icons">
-                <a href="${FACEBOOK_URL}" target="_blank" class="social-icon-btn icon-fb" title="Theo dõi Facebook">
+                <a href="${FACEBOOK_URL}" target="_blank" class="social-icon-btn icon-fb" title="Facebook">
                     ${fbSvg}
                 </a>
-                <a href="${TIKTOK_URL}" target="_blank" class="social-icon-btn icon-tt" title="Theo dõi TikTok">
+                <a href="${TIKTOK_URL}" target="_blank" class="social-icon-btn icon-tt" title="TikTok">
                     ${ttSvg}
                 </a>
             </div>
@@ -587,7 +613,7 @@ async function buildWebsite() {
     <main class="container">
         <div class="intro-banner">
             <div class="intro-content" id="introText">
-                Chương trình "Mỗi xã một sản phẩm" (OCOP) là động lực phát triển kinh tế nông thôn bằng việc chuẩn hóa các sản phẩm đặc trưng mang đậm bản sắc văn hóa vùng miền; trong đó, Quảng Ngãi với tiềm năng phong phú từ đồng bằng ven sông Trà Khúc, khối núi Ngọc Linh hùng vĩ đến biển đảo Lý Sơn chính là vùng đất hội tụ nhiều sản phẩm đặc hữu trứ danh. Phát huy lợi thế này, kho tàng OCOP Quảng Ngãi với hàng trăm sản phẩm đạt chuẩn từ 3 đến 5 sao từ 96 xã, phường, thị trấn không chỉ là kết tinh tâm huyết và văn hóa địa phương mà còn là cầu nối uy tín đưa nông sản chất lượng cao vươn xa, góp phần thúc đẩy kinh tế tỉnh nhà phát triển bền vững.
+                Chương trình "Mỗi xã một sản phẩm" (OCOP) giúp chuẩn hóa các nông sản, đặc sản đặc trưng vùng miền. Kho tàng OCOP Quảng Ngãi với hàng trăm sản phẩm 3–5 sao từ 96 xã phường chính là kết tinh tâm huyết và bản sắc địa phương.
             </div>
             <button class="btn-toggle-intro" id="btnToggleIntro" onclick="toggleIntro()">Xem thêm ▾</button>
         </div>
@@ -631,8 +657,8 @@ async function buildWebsite() {
     </main>
 
     <footer>
-        <p>&copy; 2026 - Trang tin tổng hợp về sản phẩm OCOP Quảng Ngãi</p>
-        <div class="social-contact" style="margin-top: 10px;">
+        <p>&copy; 2026 - Trang tin về sản phẩm OCOP Quảng Ngãi</p>
+        <div class="social-contact" style="margin-top: 8px;">
             <span>Liên hệ:</span>
             <div class="social-icons">
                 <a href="${FACEBOOK_URL}" target="_blank" class="social-icon-btn icon-fb" title="Facebook">
@@ -756,8 +782,7 @@ async function buildWebsite() {
         const robotsTxt = `User-agent: *\nAllow: /\n\nSitemap: ${DOMAIN}/sitemap.xml`;
         fs.writeFileSync(path.join(distDir, 'robots.txt'), robotsTxt);
 
-        console.log(' 🗺️ Đã đọc chuẩn 100% dữ liệu CSV (xử lý triệt để dấu ngắt dòng)');
-        console.log(' 📄 Đã build xong toàn bộ website hoàn hảo!');
+        console.log(' 🎨 Đã nâng cấp giao diện Mobile vô cùng hiện đại và sang trọng!');
 
     } catch (error) {
         console.error('❌ Có lỗi xảy ra:', error.message);
