@@ -174,7 +174,7 @@ async function buildWebsite() {
 
             let htmlContent = templateHtml
                 .replaceAll('{{TITLE}}', product.title || '')
-                .replaceAll('{{DESCRIPTION}}', product.description || `Sản phẩm OCOP ${star} sao tại ${district}, Quảng Ngãi. Tra cứu/tìm mua sản phẩm OCOP Quảng Ngãi thuộc 96 xã phường đặc khu.`)
+                .replaceAll('{{DESCRIPTION}}', product.description || `Sản phẩm OCOP ${star} sao tại ${district}, Quảng Ngãi. Tra cứu và tìm mua sản phẩm OCOP Quảng Ngãi thuộc 96 xã phường đặc khu.`)
                 .replaceAll('{{STAR}}', star)
                 .replaceAll('{{DISTRICT}}', district)
                 .replaceAll('{{CATEGORY}}', category)
@@ -620,7 +620,7 @@ async function buildWebsite() {
     <main class="container">
         <div class="intro-banner">
             <div class="intro-content" id="introText">
-                Chương trình "Mỗi xã một sản phẩm" (OCOP) là động lực phát triển kinh tế nông thôn bằng việc chuẩn hóa các sản phẩm đặc trưng mang đậm bản sắc văn hóa vùng miền; trong đó, Quảng Ngãi với tiềm năng phong phú từ đồng bằng ven sông Trà Khúc, khối núi Ngọc Linh hùng vĩ đến biển đảo Lý Sơn chính là vùng đất hội tụ nhiều sản phẩm đặc hữu trứ danh. Pháthuy lợi thế này, kho tàng OCOP Quảng Ngãi với hàng trăm sản phẩm đạt chuẩn từ 3 đến 5 sao từ 96 xã, phường, thị trấn không chỉ là kết tinh tâm huyết và văn hóa địa phương mà còn là cầu nối uy tín đưa nông sản chất lượng cao vươn xa, góp phần thúc đẩy kinh tế tỉnh nhà phát triển bền vững.
+                Chương trình "Mỗi xã một sản phẩm" (OCOP) là động lực phát triển kinh tế nông thôn bằng việc chuẩn hóa các sản phẩm đặc trưng mang đậm bản sắc văn hóa vùng miền; trong đó, Quảng Ngãi với tiềm năng phong phú từ đồng bằng ven sông Trà Khúc, khối núi Ngọc Linh hùng vĩ đến biển đảo Lý Sơn chính là vùng đất hội tụ nhiều sản phẩm đặc hữu trứ danh. Pháthuy lợi thế này, kho tàng OCOP Quảng Ngãi với hàng trăm sản phẩm đạt chuẩn từ 3 đến 5 sao từ 96 xã, phường, đặc khu không chỉ là kết tinh tâm huyết và văn hóa địa phương mà còn là cầu nối uy tín đưa nông sản chất lượng cao vươn xa, góp phần thúc đẩy kinh tế tỉnh nhà phát triển bền vững.
             </div>
             <button class="btn-toggle-intro" id="btnToggleIntro" onclick="toggleIntro()">Xem thêm ▾</button>
         </div>
