@@ -12,19 +12,28 @@ const TIKTOK_URL = "https://tiktok.com/@ocop.qung.ngi";
 
 const MAX_DISPLAY_PER_CATEGORY = 24;
 
-// Hàm chuẩn hóa nhận diện tiêu đề cột chính xác tuyệt đối
+// 🎯 ĐẶT THỨ TỰ ƯU TIÊN HIỂN THỊ CÁC CHUYÊN MỤC TẠI ĐÂY (Mục nào nằm trên sẽ hiển thị trước)
+const CATEGORY_PRIORITY = [
+    'Tỏi Lý Sơn',
+    'Sâm Ngọc Linh',
+    'Quế Trà Bồng',
+    'Thực phẩm',
+    'Gia vị, Dầu ăn & Mật ong',
+    'Đồ uống',
+    'Khác'
+];
+
 function normalizeHeader(h) {
     if (!h) return '';
     const norm = h.toString().toLowerCase().trim()
         .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
         .replace(/[\s_-]+/g, '');
     
-    // Ưu tiên các tên cột chuẩn trước
     if (norm === 'id') return 'id';
     if (norm === 'slug' || norm.includes('duongdan')) return 'slug';
     if (norm === 'title' || norm === 'tensanpham' || norm === 'ten') return 'title';
     if (norm === 'star' || norm.includes('sao')) return 'star';
-    if (norm === 'district' || norm.includes('xa') || norm.includes('huyen') || norm.includes('khuvuc')) return 'district';
+    if (norm === 'district' || norm.includes('xa' ) || norm.includes('huyen') || norm.includes('khuvuc')) return 'district';
     if (norm === 'category' || norm.includes('chuyenmuc') || norm.includes('danhmuc')) return 'category';
     if (norm === 'description' || norm.includes('motangan') || norm.includes('mota')) return 'description';
     if (norm === 'content' || norm.includes('noidung')) return 'content';
@@ -169,12 +178,11 @@ async function buildWebsite() {
                 `;
             }
 
-            // Bài viết mô tả chính (ưu tiên lấy cột content, nếu trống thì lấy description)
             const mainContent = product.content || product.description || '';
 
             let htmlContent = templateHtml
                 .replaceAll('{{TITLE}}', product.title || '')
-                .replaceAll('{{DESCRIPTION}}', product.description || `Sản phẩm OCOP ${star} sao tại ${district}, Quảng Ngãi. Tra cứu và tìm mua sản phẩm OCOP Quảng Ngãi thuộc 96 xã phường đặc khu.`)
+                .replaceAll('{{DESCRIPTION}}', product.description || `Sản phẩm OCOP ${star} sao tại ${district}, Quảng Ngãi. Tra cứu/tìm mua sản phẩm OCOP Quảng Ngãi thuộc 96 xã phường đặc khu.`)
                 .replaceAll('{{STAR}}', star)
                 .replaceAll('{{DISTRICT}}', district)
                 .replaceAll('{{CATEGORY}}', category)
@@ -242,11 +250,22 @@ async function buildWebsite() {
             `;
         }
 
+        // Sắp xếp các chuyên mục theo đúng mảng ưu tiên CATEGORY_PRIORITY ở trên
+        const sortedCategoryNames = Object.keys(categoriesMap).sort((a, b) => {
+            let idxA = CATEGORY_PRIORITY.indexOf(a);
+            let idxB = CATEGORY_PRIORITY.indexOf(b);
+            if (idxA === -1) idxA = 999; // Nếu chuyên mục mới tạo chưa có trong danh sách ưu tiên sẽ đẩy xuống dưới cùng
+            if (idxB === -1) idxB = 999;
+            if (idxA !== idxB) return idxA - idxB;
+            return a.localeCompare(b, 'vi'); // Nếu trùng độ ưu tiên thì sắp xếp theo bảng chữ cái tiếng Việt
+        });
+
         let categorySectionsHtml = '';
         let catIndex = 0;
-        for (const [catName, catProducts] of Object.entries(categoriesMap)) {
+        for (const catName of sortedCategoryNames) {
             catIndex++;
             const catId = `cat-sec-${catIndex}`;
+            const catProducts = categoriesMap[catName];
             catProducts.sort(sortByOrder);
 
             const cardsHtml = catProducts.map((p, idx) => renderCard(p, idx >= MAX_DISPLAY_PER_CATEGORY)).join('');
@@ -601,8 +620,8 @@ async function buildWebsite() {
 <body>
 
     <header>
-        <h1>OCOP QUẢNG NGÃI</h1>
-        <p>Tra cứu và tìm mua sản phẩm OCOP Quảng Ngãi thuộc 96 xã phường đặc khu.</p>
+        <h1>TRANG TIN SẢN PHẨM OCOP QUẢNG NGÃI</h1>
+        <p>Tra cứu/tìm mua sản phẩm OCOP Quảng Ngãi thuộc 96 xã phường đặc khu.</p>
         
         <div class="social-contact">
             <span>Liên hệ:</span>
@@ -620,7 +639,7 @@ async function buildWebsite() {
     <main class="container">
         <div class="intro-banner">
             <div class="intro-content" id="introText">
-                Chương trình "Mỗi xã một sản phẩm" (OCOP) là động lực phát triển kinh tế nông thôn bằng việc chuẩn hóa các sản phẩm đặc trưng mang đậm bản sắc văn hóa vùng miền; trong đó, Quảng Ngãi với tiềm năng phong phú từ đồng bằng ven sông Trà Khúc, khối núi Ngọc Linh hùng vĩ đến biển đảo Lý Sơn chính là vùng đất hội tụ nhiều sản phẩm đặc hữu trứ danh. Pháthuy lợi thế này, kho tàng OCOP Quảng Ngãi với hàng trăm sản phẩm đạt chuẩn từ 3 đến 5 sao từ 96 xã, phường, đặc khu không chỉ là kết tinh tâm huyết và văn hóa địa phương mà còn là cầu nối uy tín đưa nông sản chất lượng cao vươn xa, góp phần thúc đẩy kinh tế tỉnh nhà phát triển bền vững.
+                Chương trình "Mỗi xã một sản phẩm" (OCOP) là động lực phát triển kinh tế nông thôn bằng việc chuẩn hóa các sản phẩm đặc trưng mang đậm bản sắc văn hóa vùng miền; trong đó, Quảng Ngãi với tiềm năng phong phú từ đồng bằng ven sông Trà Khúc, khối núi Ngọc Linh hùng vĩ đến biển đảo Lý Sơn chính là vùng đất hội tụ nhiều sản phẩm đặc hữu trứ danh. Phát huy lợi thế này, kho tàng OCOP Quảng Ngãi với hàng trăm sản phẩm đạt chuẩn từ 3 đến 5 sao từ 96 xã, phường, thị trấn không chỉ là kết tinh tâm huyết và văn hóa địa phương mà còn là cầu nối uy tín đưa nông sản chất lượng cao vươn xa, góp phần thúc đẩy kinh tế tỉnh nhà phát triển bền vững.
             </div>
             <button class="btn-toggle-intro" id="btnToggleIntro" onclick="toggleIntro()">Xem thêm ▾</button>
         </div>
@@ -789,7 +808,7 @@ async function buildWebsite() {
         const robotsTxt = `User-agent: *\nAllow: /\n\nSitemap: ${DOMAIN}/sitemap.xml`;
         fs.writeFileSync(path.join(distDir, 'robots.txt'), robotsTxt);
 
-        console.log(' 🛠️ Đã sửa triệt để lỗi khớp tên tiêu đề và nội dung bài viết!');
+        console.log(' 🎯 Đã cập nhật thứ tự chuyên mục thành công!');
 
     } catch (error) {
         console.error('❌ Có lỗi xảy ra:', error.message);
